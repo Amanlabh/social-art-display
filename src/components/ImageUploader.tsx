@@ -44,7 +44,8 @@ export default function ImageUploader({ onImagesUploaded }: ImageUploaderProps) 
       const response = await startUpload(files);
       
       if (response && response.length > 0) {
-        const imageUrls = response.map(r => r.fileUrl);
+        // Correctly access the fileUrl from the response
+        const imageUrls = response.map(r => r.url);
         onImagesUploaded(imageUrls);
         toast.success("Images uploaded successfully!");
         setFiles([]);

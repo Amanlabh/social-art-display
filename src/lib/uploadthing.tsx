@@ -1,11 +1,45 @@
 
-import { createContext, useContext, ReactNode } from "react";
-import { generateReactHelpers } from "@uploadthing/react";
+import { createContext, useContext, ReactNode, useState } from "react";
 
-import type { OurFileRouter } from "./uploadthing-router";
+// Mock UploadThing response structure
+type UploadFileResponse = {
+  url: string;
+};
 
-export const { useUploadThing, uploadFiles } = generateReactHelpers<OurFileRouter>();
+// Mock upload function
+const mockUpload = async (files: File[]): Promise<UploadFileResponse[]> => {
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  
+  // Create URLs for the uploaded files
+  return files.map(file => ({
+    url: URL.createObjectURL(file)
+  }));
+};
 
+// Mock hook for uploading files
+export const useUploadThing = (endpoint: string) => {
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const startUpload = async (files: File[]): Promise<UploadFileResponse[]> => {
+    setIsUploading(true);
+    try {
+      const response = await mockUpload(files);
+      return response;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  
+  return { startUpload, isUploading };
+};
+
+// Mock function for uploading files directly
+export const uploadFiles = async (files: File[]): Promise<UploadFileResponse[]> => {
+  return await mockUpload(files);
+};
+
+// Context for UploadThing provider
 const UploadThingContext = createContext<null>(null);
 
 export function UploadThingProvider({ children }: { children: ReactNode }) {

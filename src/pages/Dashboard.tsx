@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Instagram, Twitter, Globe, ImageIcon, PlusCircle } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
+import SocialMediaAuth from "@/components/SocialMediaAuth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -31,6 +32,14 @@ interface ArtworkImage {
   source: "upload" | "instagram" | "twitter";
 }
 
+interface SocialConnection {
+  platform: "instagram" | "twitter";
+  connected: boolean;
+  username: string;
+  accessToken: string;
+  lastFetched?: Date;
+}
+
 const Dashboard = () => {
   const { user } = useUser();
   const navigate = useNavigate();
@@ -42,11 +51,15 @@ const Dashboard = () => {
     twitter: ""
   });
   const [images, setImages] = useState<ArtworkImage[]>([]);
-  const [socialConnected, setSocialConnected] = useState({
-    instagram: false,
-    twitter: false
+  const [socialConnections, setSocialConnections] = useState<{
+    instagram: SocialConnection;
+    twitter: SocialConnection;
+  }>({
+    instagram: { platform: "instagram", connected: false, username: "", accessToken: "" },
+    twitter: { platform: "twitter", connected: false, username: "", accessToken: "" }
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingImages, setIsFetchingImages] = useState(false);
 
   // Load saved profile from localStorage on component mount
   useEffect(() => {
@@ -69,7 +82,7 @@ const Dashboard = () => {
     }
     
     if (savedConnections) {
-      setSocialConnected(JSON.parse(savedConnections));
+      setSocialConnections(JSON.parse(savedConnections));
     }
   }, [user]);
 
@@ -93,43 +106,85 @@ const Dashboard = () => {
     }, 800);
   };
 
-  const handleSocialConnect = (platform: "instagram" | "twitter") => {
-    // In a real app, this would initiate an OAuth flow
-    toast.info(`Connecting to ${platform}...`);
-    
-    setTimeout(() => {
-      // Mock successful connection
-      setSocialConnected(prev => ({
-        ...prev,
-        [platform]: true
-      }));
-      
-      // Save connection state
-      localStorage.setItem(
-        "socialConnections", 
-        JSON.stringify({
-          ...socialConnected,
-          [platform]: true
-        })
-      );
-      
-      // Mock fetching images from social platform
-      if (platform === "instagram") {
-        const mockInstaImages = Array(6).fill(0).map((_, i) => ({
-          id: `insta-${Date.now()}-${i}`,
-          url: `https://source.unsplash.com/random/300x300?art&sig=${i}`,
-          source: "instagram" as const
-        }));
-        
-        setImages(prev => [...prev, ...mockInstaImages]);
-        localStorage.setItem(
-          "userImages", 
-          JSON.stringify([...images, ...mockInstaImages])
-        );
+  const handleSocialConnect = (platform: "instagram" | "twitter", accessToken: string, username: string) => {
+    // Update the social connection state
+    setSocialConnections(prev => ({
+      ...prev,
+      [platform]: {
+        ...prev[platform],
+        connected: true,
+        username,
+        accessToken,
+        lastFetched: new Date()
       }
-      
-      toast.success(`Connected to ${platform} successfully!`);
-    }, 1500);
+    }));
+    
+    // Save to localStorage
+    localStorage.setItem(
+      "socialConnections", 
+      JSON.stringify({
+        ...socialConnections,
+        [platform]: {
+          ...socialConnections[platform],
+          connected: true,
+          username,
+          accessToken,
+          lastFetched: new Date()
+        }
+      })
+    );
+    
+    // Also update the profile with social media username
+    setProfile(prev => ({
+      ...prev,
+      [platform]: username
+    }));
+    
+    // Save updated profile
+    localStorage.setItem(
+      "userProfile",
+      JSON.stringify({
+        ...profile,
+        [platform]: username
+      })
+    );
+    
+    // Fetch images from the platform
+    fetchImagesFromSocial(platform);
+  };
+
+  const fetchImagesFromSocial = async (platform: "instagram" | "twitter") => {
+    setIsFetchingImages(true);
+    toast.info(`Fetching latest posts from ${platform}...`);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Mock images from the platform
+    const mockImages = Array(6).fill(0).map((_, i) => ({
+      id: `${platform}-${Date.now()}-${i}`,
+      url: `https://source.unsplash.com/random/600x600?art&sig=${platform}-${i}`,
+      source: platform as "instagram" | "twitter"
+    }));
+    
+    // Add new images to state
+    setImages(prev => {
+      // Filter out old images from this platform
+      const filtered = prev.filter(img => img.source !== platform);
+      return [...filtered, ...mockImages];
+    });
+    
+    // Save updated images to localStorage
+    localStorage.setItem(
+      "userImages", 
+      JSON.stringify([
+        ...images.filter(img => img.source !== platform),
+        ...mockImages
+      ])
+    );
+    
+    setIsFetchingImages(false);
+    toast.success(`Successfully imported images from ${platform}!`);
   };
 
   const handleImagesUploaded = (urls: string[]) => {
@@ -300,22 +355,38 @@ const Dashboard = () => {
                         <p className="text-sm text-gray-500">
                           Import your latest Instagram posts
                         </p>
+                        {socialConnections.instagram.connected && (
+                          <p className="text-xs text-green-600 mt-1">
+                            Connected as @{socialConnections.instagram.username}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    {socialConnected.instagram ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-green-600">Connected</span>
-                        <Button variant="outline" size="sm">Disconnect</Button>
-                      </div>
-                    ) : (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleSocialConnect("instagram")}
-                      >
-                        Connect
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {socialConnections.instagram.connected ? (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => fetchImagesFromSocial("instagram")}
+                            disabled={isFetchingImages}
+                          >
+                            Refresh Images
+                          </Button>
+                          <SocialMediaAuth 
+                            platform="instagram" 
+                            onSuccess={(token, username) => handleSocialConnect("instagram", token, username)}
+                            alreadyConnected={true}
+                          />
+                        </>
+                      ) : (
+                        <SocialMediaAuth 
+                          platform="instagram" 
+                          onSuccess={(token, username) => handleSocialConnect("instagram", token, username)}
+                          alreadyConnected={false}
+                        />
+                      )}
+                    </div>
                   </div>
                   
                   <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -326,22 +397,38 @@ const Dashboard = () => {
                         <p className="text-sm text-gray-500">
                           Import your latest Twitter posts with images
                         </p>
+                        {socialConnections.twitter.connected && (
+                          <p className="text-xs text-green-600 mt-1">
+                            Connected as @{socialConnections.twitter.username}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    {socialConnected.twitter ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-green-600">Connected</span>
-                        <Button variant="outline" size="sm">Disconnect</Button>
-                      </div>
-                    ) : (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleSocialConnect("twitter")}
-                      >
-                        Connect
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {socialConnections.twitter.connected ? (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => fetchImagesFromSocial("twitter")}
+                            disabled={isFetchingImages}
+                          >
+                            Refresh Images
+                          </Button>
+                          <SocialMediaAuth 
+                            platform="twitter" 
+                            onSuccess={(token, username) => handleSocialConnect("twitter", token, username)}
+                            alreadyConnected={true}
+                          />
+                        </>
+                      ) : (
+                        <SocialMediaAuth 
+                          platform="twitter" 
+                          onSuccess={(token, username) => handleSocialConnect("twitter", token, username)}
+                          alreadyConnected={false}
+                        />
+                      )}
+                    </div>
                   </div>
                   
                   <div className="flex items-center gap-2 pt-4">

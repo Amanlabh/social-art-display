@@ -14,7 +14,7 @@ export default function ImageUploader({ onImagesUploaded }: ImageUploaderProps) 
   const [previews, setPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   
-  const { startUpload } = useUploadThing("imageUploader");
+  const { startUpload, isUploading } = useUploadThing("imageUploader");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -41,24 +41,20 @@ export default function ImageUploader({ onImagesUploaded }: ImageUploaderProps) 
       setUploading(true);
       toast.info("Uploading images...");
       
-      // This is a mock implementation since we're not actually connecting to UploadThing
-      // In a real app, this would call the UploadThing API
-      // const response = await startUpload(files);
-      // const imageUrls = response.map(r => r.fileUrl);
+      const response = await startUpload(files);
       
-      // Mock response
-      setTimeout(() => {
-        const mockUrls = previews.map(p => p);
-        onImagesUploaded(mockUrls);
+      if (response && response.length > 0) {
+        const imageUrls = response.map(r => r.fileUrl);
+        onImagesUploaded(imageUrls);
         toast.success("Images uploaded successfully!");
         setFiles([]);
         setPreviews([]);
-        setUploading(false);
-      }, 1500);
+      }
       
     } catch (error) {
       toast.error("Failed to upload images. Please try again.");
       console.error("Upload error:", error);
+    } finally {
       setUploading(false);
     }
   };
@@ -88,7 +84,7 @@ export default function ImageUploader({ onImagesUploaded }: ImageUploaderProps) 
           variant="outline" 
           className="border-dashed border-2"
           onClick={() => document.getElementById('file-upload')?.click()}
-          disabled={uploading}
+          disabled={uploading || isUploading}
         >
           <Upload className="mr-2 h-4 w-4" />
           Select Images
@@ -100,15 +96,15 @@ export default function ImageUploader({ onImagesUploaded }: ImageUploaderProps) 
           accept="image/*"
           className="hidden"
           onChange={handleFileChange}
-          disabled={uploading}
+          disabled={uploading || isUploading}
         />
         
         <Button 
           onClick={handleUpload} 
-          disabled={files.length === 0 || uploading}
+          disabled={files.length === 0 || uploading || isUploading}
           className="bg-purple-600 hover:bg-purple-700 text-white"
         >
-          {uploading ? "Uploading..." : "Upload Images"}
+          {uploading || isUploading ? "Uploading..." : "Upload Images"}
         </Button>
       </div>
     </div>

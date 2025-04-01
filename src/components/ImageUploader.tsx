@@ -80,10 +80,10 @@ export default function ImageUploader({ onImagesUploaded }: ImageUploaderProps) 
         ))}
       </div>
       
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Button 
           variant="outline" 
-          className="border-dashed border-2"
+          className="border-2 border-dashed"
           onClick={() => document.getElementById('file-upload')?.click()}
           disabled={uploading || isUploading}
         >
@@ -103,7 +103,6 @@ export default function ImageUploader({ onImagesUploaded }: ImageUploaderProps) 
         <Button 
           onClick={handleUpload} 
           disabled={files.length === 0 || uploading || isUploading}
-          className="bg-purple-600 hover:bg-purple-700 text-white"
         >
           {uploading || isUploading ? "Uploading..." : "Upload Images"}
         </Button>

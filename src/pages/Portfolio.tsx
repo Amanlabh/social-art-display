@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Instagram, Twitter, Globe, Mail, ArrowLeft, Music, Share2, Brush, Theater, Mic, PenTool } from "lucide-react";
@@ -136,6 +135,8 @@ const Portfolio = () => {
     return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
   };
 
+  const uploadedImages = images.filter(image => image.source === "upload");
+
   return (
     <div className="min-h-screen bg-white">
       <header className="container mx-auto px-4 py-4 flex items-center justify-between sticky top-0 z-10 bg-white border-b">
@@ -236,90 +237,24 @@ const Portfolio = () => {
         </Card>
         
         <div className="max-w-5xl mx-auto">
-          {images.length > 0 ? (
+          {uploadedImages.length > 0 ? (
             <div>
-              {images.some(img => img.source === "upload") && (
-                <div className="mb-10">
-                  <h2 className="text-xl font-bold mb-5 text-gray-900">My Artwork</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {images
-                      .filter(image => image.source === "upload")
-                      .map(image => (
-                        <div key={image.id} className="group">
-                          <div className="relative overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
-                            <img 
-                              src={image.url} 
-                              alt="Artwork" 
-                              className="w-full aspect-square object-cover"
-                            />
-                          </div>
-                        </div>
-                      ))}
-                  </div>
+              <div className="mb-10">
+                <h2 className="text-xl font-bold mb-5 text-gray-900">My Artwork</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {uploadedImages.map(image => (
+                    <div key={image.id} className="group">
+                      <div className="relative overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
+                        <img 
+                          src={image.url} 
+                          alt="Artwork" 
+                          className="w-full aspect-square object-cover"
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
-              
-              {images.some(img => img.source === "instagram") && (
-                <div className="mb-10">
-                  <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-gray-900">
-                    <Instagram className="w-5 h-5 text-pink-600" />
-                    <span>Instagram</span>
-                    {profile.instagram && <span className="text-base font-normal text-gray-500">@{profile.instagram}</span>}
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {images
-                      .filter(image => image.source === "instagram")
-                      .map(image => (
-                        <div key={image.id} className="group">
-                          <div className="relative overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
-                            <img 
-                              src={image.url} 
-                              alt="Instagram post" 
-                              className="w-full aspect-square object-cover"
-                            />
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
-                              <div className="flex items-center text-white">
-                                <Instagram className="w-4 h-4 mr-2" />
-                                <span className="text-xs font-medium">Instagram</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-              
-              {images.some(img => img.source === "twitter") && (
-                <div className="mb-10">
-                  <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-gray-900">
-                    <Twitter className="w-5 h-5 text-blue-500" />
-                    <span>Twitter</span>
-                    {profile.twitter && <span className="text-base font-normal text-gray-500">@{profile.twitter}</span>}
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {images
-                      .filter(image => image.source === "twitter")
-                      .map(image => (
-                        <div key={image.id} className="group">
-                          <div className="relative overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
-                            <img 
-                              src={image.url} 
-                              alt="Twitter post" 
-                              className="w-full aspect-square object-cover"
-                            />
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
-                              <div className="flex items-center text-white">
-                                <Twitter className="w-4 h-4 mr-2" />
-                                <span className="text-xs font-medium">Twitter</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
+              </div>
               
               {tracks.length > 0 && (
                 <div className="mb-10">
@@ -337,7 +272,7 @@ const Portfolio = () => {
                             alt={track.album}
                             className="w-full h-full object-cover"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-3 text-white">
+                          <div className="absolute inset-0 bg-black/40 flex flex-col justify-end p-3 text-white">
                             <h3 className="font-bold truncate">{track.title}</h3>
                             <p className="text-sm text-white/90 truncate">{track.artist}</p>
                           </div>
@@ -357,8 +292,11 @@ const Portfolio = () => {
               )}
             </div>
           ) : (
-            <div className="text-center p-8 border border-dashed rounded-lg border-gray-200">
-              <p className="text-gray-500">No artwork to display yet.</p>
+            <div className="text-center p-12 border border-dashed rounded-lg border-gray-200 bg-gray-50">
+              <h3 className="text-lg font-medium text-gray-700 mb-2">No Artwork Uploaded Yet</h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Your portfolio looks best with some of your work. Upload your artwork from the dashboard to showcase your talent.
+              </p>
             </div>
           )}
         </div>

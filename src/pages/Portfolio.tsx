@@ -1,11 +1,13 @@
+
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Instagram, Twitter, Globe, Mail, ArrowLeft, Music, Share2, Brush, Theater, Mic, PenTool } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import { Instagram, Twitter, Globe, Mail, ArrowLeft, Music, Share2, Brush, Theater, Mic, PenTool, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface UserProfile {
   name: string;
@@ -33,6 +35,15 @@ interface Track {
   previewUrl?: string;
 }
 
+interface Event {
+  id: string;
+  title: string;
+  date: string;
+  location: string;
+  description: string;
+  type: "workshop" | "performance" | "exhibition" | "other";
+}
+
 interface SocialConnection {
   platform: "instagram" | "twitter" | "spotify";
   connected: boolean;
@@ -43,6 +54,7 @@ interface SocialConnection {
 
 const Portfolio = () => {
   const isMobile = useIsMobile();
+  const { id } = useParams<{id: string}>();
   const [profile, setProfile] = useState<UserProfile>({
     name: "",
     bio: "",
@@ -55,6 +67,7 @@ const Portfolio = () => {
   });
   const [images, setImages] = useState<ArtworkImage[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [socialConnections, setSocialConnections] = useState<{
     instagram: SocialConnection;
     twitter: SocialConnection;
@@ -66,10 +79,12 @@ const Portfolio = () => {
   });
 
   useEffect(() => {
+    // Load data from localStorage when component mounts
     const savedProfile = localStorage.getItem("userProfile");
     const savedImages = localStorage.getItem("userImages");
     const savedTracks = localStorage.getItem("userTracks");
     const savedConnections = localStorage.getItem("socialConnections");
+    const savedEvents = localStorage.getItem("userEvents");
     
     if (savedProfile) {
       setProfile(JSON.parse(savedProfile));
@@ -85,6 +100,10 @@ const Portfolio = () => {
     
     if (savedConnections) {
       setSocialConnections(JSON.parse(savedConnections));
+    }
+    
+    if (savedEvents) {
+      setEvents(JSON.parse(savedEvents));
     }
   }, []);
 
@@ -135,7 +154,13 @@ const Portfolio = () => {
     return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
   };
 
+  // Only display uploaded images
   const uploadedImages = images.filter(image => image.source === "upload");
+
+  // Get upcoming events (events with dates in the future)
+  const upcomingEvents = events
+    .filter(event => new Date(event.date) >= new Date())
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return (
     <div className="min-h-screen bg-white">
@@ -237,66 +262,104 @@ const Portfolio = () => {
         </Card>
         
         <div className="max-w-5xl mx-auto">
+          {/* Upcoming Events Section */}
+          {upcomingEvents.length > 0 && (
+            <div className="mb-10">
+              <h2 className="text-xl font-bold mb-5 text-gray-900 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-gray-700" />
+                <span>Upcoming Events</span>
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {upcomingEvents.map(event => (
+                  <Card key={event.id} className="border shadow-sm hover:shadow-md transition-all duration-300">
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-lg">{event.title}</CardTitle>
+                        <span className="text-xs font-semibold px-2 py-1 bg-gray-100 rounded-full">
+                          {event.type}
+                        </span>
+                      </div>
+                      <CardDescription>
+                        {new Date(event.date).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-700 mb-1"><strong>Location:</strong> {event.location}</p>
+                      <p className="text-sm text-gray-600">{event.description}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Artwork Section */}
           {uploadedImages.length > 0 ? (
-            <div>
-              <div className="mb-10">
-                <h2 className="text-xl font-bold mb-5 text-gray-900">My Artwork</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {uploadedImages.map(image => (
-                    <div key={image.id} className="group">
-                      <div className="relative overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="mb-10">
+              <h2 className="text-xl font-bold mb-5 text-gray-900">My Artwork</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {uploadedImages.map(image => (
+                  <div key={image.id} className="group">
+                    <div className="relative overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
+                      <AspectRatio ratio={1/1}>
                         <img 
                           src={image.url} 
                           alt="Artwork" 
-                          className="w-full aspect-square object-cover"
+                          className="w-full h-full object-cover"
                         />
-                      </div>
+                      </AspectRatio>
                     </div>
-                  ))}
-                </div>
-              </div>
-              
-              {tracks.length > 0 && (
-                <div className="mb-10">
-                  <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-gray-900">
-                    <Music className="w-5 h-5 text-green-600" />
-                    <span>Spotify</span>
-                    {profile.spotify && <span className="text-base font-normal text-gray-500">@{profile.spotify}</span>}
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {tracks.map(track => (
-                      <Card key={track.id} className="overflow-hidden border shadow-sm hover:shadow-md transition-all duration-300 bg-white">
-                        <div className="relative h-44">
-                          <img 
-                            src={track.coverUrl} 
-                            alt={track.album}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/40 flex flex-col justify-end p-3 text-white">
-                            <h3 className="font-bold truncate">{track.title}</h3>
-                            <p className="text-sm text-white/90 truncate">{track.artist}</p>
-                          </div>
-                        </div>
-                        <CardContent className="p-3 flex items-center justify-between">
-                          <span className="text-xs text-gray-500 truncate">{track.album}</span>
-                          {track.previewUrl && (
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
-                              <Music className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="text-center p-12 border border-dashed rounded-lg border-gray-200 bg-gray-50">
+            <div className="text-center p-12 border border-dashed rounded-lg border-gray-200 bg-gray-50 mb-10">
               <h3 className="text-lg font-medium text-gray-700 mb-2">No Artwork Uploaded Yet</h3>
               <p className="text-gray-500 max-w-md mx-auto">
-                Your portfolio looks best with some of your work. Upload your artwork from the dashboard to showcase your talent.
+                This artist hasn't uploaded any artwork to their portfolio yet.
               </p>
+            </div>
+          )}
+          
+          {/* Spotify Tracks Section */}
+          {tracks.length > 0 && (
+            <div className="mb-10">
+              <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-gray-900">
+                <Music className="w-5 h-5 text-green-600" />
+                <span>Spotify</span>
+                {profile.spotify && <span className="text-base font-normal text-gray-500">@{profile.spotify}</span>}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {tracks.map(track => (
+                  <Card key={track.id} className="overflow-hidden border shadow-sm hover:shadow-md transition-all duration-300 bg-white">
+                    <div className="relative h-44">
+                      <img 
+                        src={track.coverUrl} 
+                        alt={track.album}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 flex flex-col justify-end p-3 text-white">
+                        <h3 className="font-bold truncate">{track.title}</h3>
+                        <p className="text-sm text-white/90 truncate">{track.artist}</p>
+                      </div>
+                    </div>
+                    <CardContent className="p-3 flex items-center justify-between">
+                      <span className="text-xs text-gray-500 truncate">{track.album}</span>
+                      {track.previewUrl && (
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
+                          <Music className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
         </div>

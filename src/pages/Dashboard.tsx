@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { UserButton, useUser } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
@@ -11,11 +12,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Instagram, Twitter, Globe, ImageIcon, PlusCircle, Music, Share2 } from "lucide-react";
+import { Instagram, Twitter, Globe, ImageIcon, PlusCircle, Music, Share2, Calendar, Search } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
 import SocialMediaAuth from "@/components/SocialMediaAuth";
 import ProfilePictureUploader from "@/components/ProfilePictureUploader";
 import { ArtistTypeSelector } from "@/components/ArtistTypeSelector";
+import EventsManager from "@/components/EventsManager";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -80,6 +82,9 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingImages, setIsFetchingImages] = useState(false);
   const [isFetchingTracks, setIsFetchingTracks] = useState(false);
+  
+  // State to hold portfolio search term
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const savedProfile = localStorage.getItem("userProfile");
@@ -297,24 +302,46 @@ const Dashboard = () => {
         .catch(() => toast.error("Couldn't copy link to clipboard."));
     }
   };
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/portfolio/${searchTerm.trim()}`);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-white">
       <header className="bg-white border-b border-gray-200 shadow-sm backdrop-blur-md bg-white/90 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent">Artist Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Artist Dashboard</h1>
           <div className="flex items-center gap-4">
+            {/* Portfolio Search Form */}
+            <form onSubmit={handleSearch} className="hidden md:flex items-center gap-2">
+              <Input
+                type="text"
+                placeholder="Search profiles by ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-48 border-gray-200 focus-visible:ring-gray-900"
+              />
+              <Button type="submit" variant="outline" size="sm">
+                <Search className="h-4 w-4 mr-1" />
+                Search
+              </Button>
+            </form>
+            
             <Button 
               variant="outline" 
               onClick={viewPortfolio}
-              className="border-purple-200 hover:bg-purple-50 transition-all"
+              className="border-gray-200 hover:bg-gray-50 transition-all"
             >
               View Portfolio
             </Button>
             <Button 
               variant="outline" 
               onClick={sharePortfolio}
-              className="border-purple-200 hover:bg-purple-50 transition-all flex gap-2 items-center"
+              className="border-gray-200 hover:bg-gray-50 transition-all flex gap-2 items-center"
             >
               <Share2 className="h-4 w-4" />
               Share
@@ -326,17 +353,18 @@ const Dashboard = () => {
       
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="mb-8 p-1 bg-purple-100/50 rounded-xl">
+          <TabsList className="mb-8 p-1 bg-gray-100/50 rounded-xl">
             <TabsTrigger value="profile" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Profile</TabsTrigger>
             <TabsTrigger value="gallery" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Gallery</TabsTrigger>
+            <TabsTrigger value="events" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Events</TabsTrigger>
             <TabsTrigger value="social" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Social Media</TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile">
-            <Card className="border-none shadow-md overflow-hidden bg-white rounded-xl">
-              <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-500 text-white">
+            <Card className="border shadow-md overflow-hidden bg-white rounded-xl">
+              <CardHeader>
                 <CardTitle>Artist Profile</CardTitle>
-                <CardDescription className="text-white/80">
+                <CardDescription>
                   Update your profile information visible to visitors
                 </CardDescription>
               </CardHeader>
@@ -360,7 +388,7 @@ const Dashboard = () => {
                           placeholder="Your Artist Name" 
                           value={profile.name}
                           onChange={handleProfileChange}
-                          className="border-purple-200 focus-visible:ring-purple-500"
+                          className="border-gray-200 focus-visible:ring-gray-500"
                         />
                       </div>
                       
@@ -387,7 +415,7 @@ const Dashboard = () => {
                       value={profile.bio}
                       onChange={handleProfileChange}
                       rows={4}
-                      className="border-purple-200 focus-visible:ring-purple-500"
+                      className="border-gray-200 focus-visible:ring-gray-500"
                     />
                   </div>
                   
@@ -401,14 +429,14 @@ const Dashboard = () => {
                       placeholder="https://your-website.com" 
                       value={profile.website}
                       onChange={handleProfileChange}
-                      className="border-purple-200 focus-visible:ring-purple-500"
+                      className="border-gray-200 focus-visible:ring-gray-500"
                     />
                   </div>
                   
                   <Button 
                     onClick={saveProfile} 
                     disabled={isLoading}
-                    className="w-full md:w-auto bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white"
+                    className="w-full md:w-auto bg-gray-900 hover:bg-gray-800 text-white"
                   >
                     {isLoading ? "Saving..." : "Save Profile"}
                   </Button>
@@ -418,39 +446,42 @@ const Dashboard = () => {
           </TabsContent>
           
           <TabsContent value="gallery">
-            <Card className="border-none shadow-md overflow-hidden bg-white rounded-xl">
-              <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-500 text-white">
+            <Card className="border shadow-md overflow-hidden bg-white rounded-xl">
+              <CardHeader>
                 <CardTitle>Artwork Gallery</CardTitle>
-                <CardDescription className="text-white/80">
+                <CardDescription>
                   Upload and manage your artwork
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
                 <ImageUploader onImagesUploaded={handleImagesUploaded} />
                 
-                {images.length > 0 ? (
+                {images.filter(img => img.source === "upload").length > 0 ? (
                   <div className="mt-8">
-                    <h3 className="text-lg font-medium mb-4 bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent">Your Gallery</h3>
+                    <h3 className="text-lg font-medium mb-4 text-gray-900">Your Gallery</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {images.map(image => (
-                        <div key={image.id} className="relative group rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]">
-                          <img 
-                            src={image.url} 
-                            alt="Artwork" 
-                            className="w-full h-48 object-cover"
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span className="px-3 py-1.5 bg-black/70 text-white text-xs uppercase rounded-full tracking-wider">
-                              {image.source}
-                            </span>
+                      {images
+                        .filter(img => img.source === "upload")
+                        .map(image => (
+                          <div key={image.id} className="relative group rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-[1.02]">
+                            <img 
+                              src={image.url} 
+                              alt="Artwork" 
+                              className="w-full h-48 object-cover"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="px-3 py-1.5 bg-black/70 text-white text-xs uppercase rounded-full tracking-wider">
+                                {image.source}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      }
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-8 text-center p-8 border border-dashed rounded-xl border-purple-200">
-                    <ImageIcon className="mx-auto h-12 w-12 text-purple-300" />
+                  <div className="mt-8 text-center p-8 border border-dashed rounded-xl border-gray-200">
+                    <ImageIcon className="mx-auto h-12 w-12 text-gray-300" />
                     <h3 className="mt-2 text-sm font-semibold text-gray-900">No images yet</h3>
                     <p className="mt-1 text-sm text-gray-500">
                       Start by uploading images or connecting your social accounts
@@ -460,7 +491,7 @@ const Dashboard = () => {
                 
                 {tracks.length > 0 && (
                   <div className="mt-12">
-                    <h3 className="text-lg font-medium mb-4 bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">Your Tracks</h3>
+                    <h3 className="text-lg font-medium mb-4 text-gray-900">Your Tracks</h3>
                     <div className="space-y-4">
                       {tracks.map(track => (
                         <div key={track.id} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
@@ -487,19 +518,23 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
           
+          <TabsContent value="events">
+            <EventsManager />
+          </TabsContent>
+          
           <TabsContent value="social">
-            <Card className="border-none shadow-md overflow-hidden bg-white rounded-xl">
-              <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-500 text-white">
+            <Card className="border shadow-md overflow-hidden bg-white rounded-xl">
+              <CardHeader>
                 <CardTitle>Social Media Connections</CardTitle>
-                <CardDescription className="text-white/80">
+                <CardDescription>
                   Connect your accounts to import your latest posts and tracks
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="grid gap-6 py-4">
-                  <div className="flex items-center justify-between p-5 border border-purple-100 rounded-xl hover:shadow-md transition-all duration-300 bg-gradient-to-r from-purple-50 to-pink-50">
+                  <div className="flex items-center justify-between p-5 border border-gray-100 rounded-xl hover:shadow-md transition-all duration-300 bg-gray-50">
                     <div className="flex items-center gap-4">
-                      <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-full p-2 text-white">
+                      <div className="bg-pink-500 rounded-full p-2 text-white">
                         <Instagram className="h-8 w-8" />
                       </div>
                       <div>
@@ -522,7 +557,7 @@ const Dashboard = () => {
                             size="sm"
                             onClick={() => fetchImagesFromSocial("instagram")}
                             disabled={isFetchingImages}
-                            className="border-purple-200 hover:bg-purple-50"
+                            className="border-gray-200 hover:bg-gray-50"
                           >
                             Refresh Images
                           </Button>
@@ -542,7 +577,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between p-5 border border-blue-100 rounded-xl hover:shadow-md transition-all duration-300 bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <div className="flex items-center justify-between p-5 border border-gray-100 rounded-xl hover:shadow-md transition-all duration-300 bg-gray-50">
                     <div className="flex items-center gap-4">
                       <div className="bg-blue-500 rounded-full p-2 text-white">
                         <Twitter className="h-8 w-8" />
@@ -567,7 +602,7 @@ const Dashboard = () => {
                             size="sm"
                             onClick={() => fetchImagesFromSocial("twitter")}
                             disabled={isFetchingImages}
-                            className="border-blue-200 hover:bg-blue-50"
+                            className="border-gray-200 hover:bg-gray-50"
                           >
                             Refresh Images
                           </Button>
@@ -587,7 +622,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between p-5 border border-green-100 rounded-xl hover:shadow-md transition-all duration-300 bg-gradient-to-r from-green-50 to-emerald-50">
+                  <div className="flex items-center justify-between p-5 border border-gray-100 rounded-xl hover:shadow-md transition-all duration-300 bg-gray-50">
                     <div className="flex items-center gap-4">
                       <div className="bg-green-600 rounded-full p-2 text-white">
                         <Music className="h-8 w-8" />
@@ -612,7 +647,7 @@ const Dashboard = () => {
                             size="sm"
                             onClick={fetchTracksFromSpotify}
                             disabled={isFetchingTracks}
-                            className="border-green-200 hover:bg-green-50"
+                            className="border-gray-200 hover:bg-gray-50"
                           >
                             Refresh Tracks
                           </Button>

@@ -1,14 +1,14 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Instagram, Twitter } from "lucide-react";
+import { Instagram, Twitter, Music } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 interface SocialMediaAuthProps {
-  platform: "instagram" | "twitter";
+  platform: "instagram" | "twitter" | "spotify";
   onSuccess: (accessToken: string, username: string) => void;
   alreadyConnected: boolean;
 }
@@ -45,29 +45,53 @@ export default function SocialMediaAuth({ platform, onSuccess, alreadyConnected 
     }, 1500);
   };
   
-  const PlatformIcon = platform === "instagram" ? Instagram : Twitter;
-  const platformColor = platform === "instagram" ? "text-pink-600" : "text-blue-500";
-  const platformBgColor = platform === "instagram" ? "bg-gradient-to-r from-purple-500 to-pink-500" : "bg-blue-500";
+  const getPlatformIcon = () => {
+    switch(platform) {
+      case "instagram": 
+        return <Instagram className="h-4 w-4" />;
+      case "twitter": 
+        return <Twitter className="h-4 w-4" />;
+      case "spotify": 
+        return <Music className="h-4 w-4" />;
+      default:
+        return null;
+    }
+  };
+  
+  const getPlatformColor = () => {
+    switch(platform) {
+      case "instagram": 
+        return { text: "text-pink-600", bg: "bg-gradient-to-r from-purple-500 to-pink-500" };
+      case "twitter": 
+        return { text: "text-blue-500", bg: "bg-blue-500" };
+      case "spotify": 
+        return { text: "text-green-500", bg: "bg-green-600" };
+      default:
+        return { text: "text-gray-500", bg: "bg-gray-500" };
+    }
+  };
+
+  const { text: platformColor, bg: platformBgColor } = getPlatformColor();
   
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button
           variant={alreadyConnected ? "outline" : "default"}
-          className={alreadyConnected ? "gap-2" : `gap-2 text-white ${platformBgColor}`}
+          className={alreadyConnected ? "gap-2" : `gap-2 text-white ${platformBgColor} hover:${platformBgColor}`}
         >
-          <PlatformIcon className={`h-4 w-4 ${alreadyConnected ? platformColor : ""}`} />
+          {getPlatformIcon()}
           {alreadyConnected ? "Reconnect" : `Connect ${platform}`}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <PlatformIcon className={`h-5 w-5 ${platformColor}`} />
-            Connect to {platform.charAt(0).toUpperCase() + platform.slice(1)}
+            {getPlatformIcon()}
+            <span className={platformColor}>Connect to {platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
           </DialogTitle>
           <DialogDescription>
-            Log in to your {platform} account to import your latest posts.
+            Log in to your {platform} account to import your latest {platform === "spotify" ? "tracks" : "posts"}.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleLogin} className="space-y-4 py-4">

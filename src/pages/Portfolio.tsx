@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Instagram, Twitter, Globe, Mail, ArrowLeft, Music, Share2 } from "lucide-react";
+import { Instagram, Twitter, Globe, Mail, ArrowLeft, Music, Share2, Brush, Theater, Mic, PenTool } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   Card, 
@@ -11,7 +10,9 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface UserProfile {
   name: string;
@@ -20,6 +21,8 @@ interface UserProfile {
   instagram: string;
   twitter: string;
   spotify: string;
+  profilePicture: string;
+  artistType: string;
 }
 
 interface ArtworkImage {
@@ -52,7 +55,9 @@ const Portfolio = () => {
     website: "",
     instagram: "",
     twitter: "",
-    spotify: ""
+    spotify: "",
+    profilePicture: "",
+    artistType: ""
   });
   const [images, setImages] = useState<ArtworkImage[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -67,8 +72,6 @@ const Portfolio = () => {
   });
 
   useEffect(() => {
-    // In a real app, we would fetch this data from an API using the portfolio ID
-    // For this mock, we'll load from localStorage
     const savedProfile = localStorage.getItem("userProfile");
     const savedImages = localStorage.getItem("userImages");
     const savedTracks = localStorage.getItem("userTracks");
@@ -92,7 +95,6 @@ const Portfolio = () => {
   }, []);
 
   const sharePortfolio = () => {
-    // In a real app, this would generate a shareable link or open a share dialog
     const shareData = {
       title: `${profile.name}'s Art Portfolio`,
       text: `Check out ${profile.name}'s artwork!`,
@@ -107,11 +109,36 @@ const Portfolio = () => {
           toast.error("Couldn't share portfolio. Try copying the link instead.");
         });
     } else {
-      // Fallback for browsers that don't support the Web Share API
       navigator.clipboard.writeText(shareData.url)
         .then(() => toast.success("Portfolio link copied to clipboard!"))
         .catch(() => toast.error("Couldn't copy link to clipboard."));
     }
+  };
+
+  const getArtistTypeIcon = () => {
+    switch(profile.artistType) {
+      case "musician":
+        return <Music className="h-5 w-5 text-purple-500" />;
+      case "actor":
+        return <Theater className="h-5 w-5 text-blue-500" />;
+      case "painter":
+        return <Brush className="h-5 w-5 text-pink-500" />;
+      case "comedian":
+        return <Mic className="h-5 w-5 text-amber-500" />;
+      case "writer":
+        return <PenTool className="h-5 w-5 text-emerald-500" />;
+      default:
+        return null;
+    }
+  };
+
+  const getInitials = () => {
+    if (!profile.name) return "A";
+    
+    const names = profile.name.split(" ");
+    if (names.length === 1) return names[0].charAt(0).toUpperCase();
+    
+    return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
   };
 
   return (
@@ -133,10 +160,33 @@ const Portfolio = () => {
       
       <main className="container mx-auto px-4 py-8">
         <Card className="max-w-4xl mx-auto border-none shadow-lg overflow-hidden bg-white/90 backdrop-blur-sm rounded-xl mb-8">
-          <CardHeader className="text-center pb-0">
-            <CardTitle className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent">
+          <div className="relative">
+            <div className="absolute inset-0 h-48 bg-gradient-to-r from-purple-600 to-pink-500" />
+            
+            <div className="relative pt-24 flex justify-center">
+              <Avatar className="h-40 w-40 border-4 border-white shadow-xl absolute -top-20">
+                {profile.profilePicture ? (
+                  <AvatarImage src={profile.profilePicture} alt={profile.name} />
+                ) : (
+                  <AvatarFallback className="bg-gradient-to-br from-purple-600 to-pink-500 text-white text-4xl">
+                    {getInitials()}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+            </div>
+          </div>
+          
+          <CardHeader className="text-center pt-24 pb-0">
+            <CardTitle className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent">
               {profile.name || "Artist Portfolio"}
             </CardTitle>
+            
+            {profile.artistType && (
+              <div className="inline-flex items-center px-4 py-1.5 bg-purple-50 text-purple-700 rounded-full mb-4 font-medium text-sm">
+                {getArtistTypeIcon()}
+                <span className="ml-1.5">{profile.artistType}</span>
+              </div>
+            )}
             
             {profile.bio && (
               <CardDescription className="text-xl mb-6 text-gray-600 max-w-2xl mx-auto">
@@ -192,7 +242,6 @@ const Portfolio = () => {
         <div className="max-w-5xl mx-auto">
           {images.length > 0 ? (
             <div>
-              {/* Uploaded Images */}
               {images.some(img => img.source === "upload") && (
                 <div className="mb-12">
                   <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent">My Artwork</h2>
@@ -214,7 +263,6 @@ const Portfolio = () => {
                 </div>
               )}
               
-              {/* Instagram Images */}
               {images.some(img => img.source === "instagram") && (
                 <div className="mb-12">
                   <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
@@ -246,7 +294,6 @@ const Portfolio = () => {
                 </div>
               )}
               
-              {/* Twitter Images */}
               {images.some(img => img.source === "twitter") && (
                 <div className="mb-12">
                   <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
@@ -278,7 +325,6 @@ const Portfolio = () => {
                 </div>
               )}
               
-              {/* Spotify Tracks */}
               {tracks.length > 0 && (
                 <div className="mb-12">
                   <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">

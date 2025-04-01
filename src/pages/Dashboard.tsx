@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { UserButton, useUser } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Instagram, Twitter, Globe, ImageIcon, PlusCircle, Music, Share2 } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
 import SocialMediaAuth from "@/components/SocialMediaAuth";
+import ProfilePictureUploader from "@/components/ProfilePictureUploader";
+import { ArtistTypeSelector } from "@/components/ArtistTypeSelector";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -25,6 +26,8 @@ interface UserProfile {
   instagram: string;
   twitter: string;
   spotify: string;
+  profilePicture: string;
+  artistType: string;
 }
 
 interface ArtworkImage {
@@ -59,7 +62,9 @@ const Dashboard = () => {
     website: "",
     instagram: "",
     twitter: "",
-    spotify: ""
+    spotify: "",
+    profilePicture: "",
+    artistType: ""
   });
   const [images, setImages] = useState<ArtworkImage[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -76,7 +81,6 @@ const Dashboard = () => {
   const [isFetchingImages, setIsFetchingImages] = useState(false);
   const [isFetchingTracks, setIsFetchingTracks] = useState(false);
 
-  // Load saved profile from localStorage on component mount
   useEffect(() => {
     const savedProfile = localStorage.getItem("userProfile");
     const savedImages = localStorage.getItem("userImages");
@@ -86,7 +90,6 @@ const Dashboard = () => {
     if (savedProfile) {
       setProfile(JSON.parse(savedProfile));
     } else if (user) {
-      // Initialize with Clerk user data if available
       setProfile(prev => ({
         ...prev,
         name: user.fullName || "",
@@ -114,10 +117,23 @@ const Dashboard = () => {
     }));
   };
 
+  const handleArtistTypeChange = (value: string) => {
+    setProfile(prev => ({
+      ...prev,
+      artistType: value
+    }));
+  };
+
+  const handleProfilePictureChange = (url: string) => {
+    setProfile(prev => ({
+      ...prev,
+      profilePicture: url
+    }));
+  };
+
   const saveProfile = () => {
     setIsLoading(true);
     
-    // Save to localStorage (in a real app this would be an API call)
     localStorage.setItem("userProfile", JSON.stringify(profile));
     
     setTimeout(() => {
@@ -127,7 +143,6 @@ const Dashboard = () => {
   };
 
   const handleSocialConnect = (platform: "instagram" | "twitter" | "spotify", accessToken: string, username: string) => {
-    // Update the social connection state
     setSocialConnections(prev => ({
       ...prev,
       [platform]: {
@@ -139,7 +154,6 @@ const Dashboard = () => {
       }
     }));
     
-    // Save to localStorage
     localStorage.setItem(
       "socialConnections", 
       JSON.stringify({
@@ -154,13 +168,11 @@ const Dashboard = () => {
       })
     );
     
-    // Also update the profile with social media username
     setProfile(prev => ({
       ...prev,
       [platform]: username
     }));
     
-    // Save updated profile
     localStorage.setItem(
       "userProfile",
       JSON.stringify({
@@ -169,7 +181,6 @@ const Dashboard = () => {
       })
     );
     
-    // Fetch content from the platform
     if (platform === "spotify") {
       fetchTracksFromSpotify();
     } else {
@@ -181,24 +192,19 @@ const Dashboard = () => {
     setIsFetchingImages(true);
     toast.info(`Fetching latest posts from ${platform}...`);
     
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Mock images from the platform - limited to 3 recent images
     const mockImages = Array(3).fill(0).map((_, i) => ({
       id: `${platform}-${Date.now()}-${i}`,
       url: `https://source.unsplash.com/random/600x600?art&sig=${platform}-${i}-${Date.now()}`,
       source: platform as "instagram" | "twitter"
     }));
     
-    // Add new images to state
     setImages(prev => {
-      // Filter out old images from this platform
       const filtered = prev.filter(img => img.source !== platform);
       return [...filtered, ...mockImages];
     });
     
-    // Save updated images to localStorage
     localStorage.setItem(
       "userImages", 
       JSON.stringify([
@@ -215,10 +221,8 @@ const Dashboard = () => {
     setIsFetchingTracks(true);
     toast.info("Fetching latest tracks from Spotify...");
     
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Mock tracks from Spotify
     const mockTracks = [
       {
         id: `spotify-${Date.now()}-1`,
@@ -248,7 +252,6 @@ const Dashboard = () => {
     
     setTracks(mockTracks);
     
-    // Save to localStorage
     localStorage.setItem("userTracks", JSON.stringify(mockTracks));
     
     setIsFetchingTracks(false);
@@ -264,7 +267,6 @@ const Dashboard = () => {
     
     setImages(prev => [...prev, ...newImages]);
     
-    // Save to localStorage
     localStorage.setItem(
       "userImages", 
       JSON.stringify([...images, ...newImages])
@@ -276,7 +278,6 @@ const Dashboard = () => {
   };
 
   const sharePortfolio = () => {
-    // In a real app, this would generate a shareable link or open a share dialog
     const shareData = {
       title: `${profile.name}'s Art Portfolio`,
       text: `Check out ${profile.name}'s artwork!`,
@@ -291,7 +292,6 @@ const Dashboard = () => {
           toast.error("Couldn't share portfolio. Try copying the link instead.");
         });
     } else {
-      // Fallback for browsers that don't support the Web Share API
       navigator.clipboard.writeText(shareData.url)
         .then(() => toast.success("Portfolio link copied to clipboard!"))
         .catch(() => toast.error("Couldn't copy link to clipboard."));
@@ -342,18 +342,38 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-6 py-6">
-                  <div className="space-y-2">
-                    <label htmlFor="name" className="text-sm font-medium">
-                      Display Name
-                    </label>
-                    <Input 
-                      id="name" 
-                      name="name" 
-                      placeholder="Your Artist Name" 
-                      value={profile.name}
-                      onChange={handleProfileChange}
-                      className="border-purple-200 focus-visible:ring-purple-500"
+                  <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
+                    <ProfilePictureUploader 
+                      initialImageUrl={profile.profilePicture}
+                      onImageUploaded={handleProfilePictureChange}
+                      size="xl"
                     />
+                    
+                    <div className="flex-1 space-y-4 w-full">
+                      <div className="space-y-2">
+                        <label htmlFor="name" className="text-sm font-medium">
+                          Display Name
+                        </label>
+                        <Input 
+                          id="name" 
+                          name="name" 
+                          placeholder="Your Artist Name" 
+                          value={profile.name}
+                          onChange={handleProfileChange}
+                          className="border-purple-200 focus-visible:ring-purple-500"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="artistType" className="text-sm font-medium">
+                          Artist Type
+                        </label>
+                        <ArtistTypeSelector 
+                          value={profile.artistType}
+                          onChange={handleArtistTypeChange}
+                        />
+                      </div>
+                    </div>
                   </div>
                   
                   <div className="space-y-2">

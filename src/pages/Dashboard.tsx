@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Instagram, Twitter, Globe, ImageIcon, PlusCircle, Music, Share2, Calendar, Search } from "lucide-react";
+import { Instagram, Twitter, Globe, ImageIcon, PlusCircle, Music, Share2, Calendar, Search, Trash2 } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
 import SocialMediaAuth from "@/components/SocialMediaAuth";
 import ProfilePictureUploader from "@/components/ProfilePictureUploader";
@@ -278,6 +278,14 @@ const Dashboard = () => {
     );
   };
 
+  // New function to delete artwork
+  const handleDeleteArtwork = (id: string) => {
+    const updatedImages = images.filter(image => image.id !== id);
+    setImages(updatedImages);
+    localStorage.setItem("userImages", JSON.stringify(updatedImages));
+    toast.success("Artwork deleted successfully!");
+  };
+
   const viewPortfolio = () => {
     navigate("/portfolio/my-portfolio");
   };
@@ -314,7 +322,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-white">
       <header className="bg-white border-b border-gray-200 shadow-sm backdrop-blur-md bg-white/90 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Artist Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900">MOTOJOJO Dashboard</h1>
           <div className="flex items-center gap-4">
             {/* Portfolio Search Form */}
             <form onSubmit={handleSearch} className="hidden md:flex items-center gap-2">
@@ -469,10 +477,19 @@ const Dashboard = () => {
                               alt="Artwork" 
                               className="w-full h-48 object-cover"
                             />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <span className="px-3 py-1.5 bg-black/70 text-white text-xs uppercase rounded-full tracking-wider">
-                                {image.source}
-                              </span>
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-2 text-white flex justify-between items-center">
+                                <span className="text-xs uppercase tracking-wider">
+                                  {image.source}
+                                </span>
+                                <button 
+                                  onClick={() => handleDeleteArtwork(image.id)}
+                                  className="text-white hover:text-red-300 transition-colors p-1"
+                                  aria-label="Delete artwork"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         ))

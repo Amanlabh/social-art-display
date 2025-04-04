@@ -109,8 +109,8 @@ const Portfolio = () => {
 
   const sharePortfolio = () => {
     const shareData = {
-      title: `${profile.name}'s Art Portfolio`,
-      text: `Check out ${profile.name}'s artwork!`,
+      title: `${profile.name}'s MOTOJOJO Portfolio`,
+      text: `Check out ${profile.name}'s portfolio!`,
       url: window.location.href,
     };
     
@@ -146,7 +146,7 @@ const Portfolio = () => {
   };
 
   const getInitials = () => {
-    if (!profile.name) return "A";
+    if (!profile.name) return "M";
     
     const names = profile.name.split(" ");
     if (names.length === 1) return names[0].charAt(0).toUpperCase();
@@ -165,9 +165,9 @@ const Portfolio = () => {
   return (
     <div className="min-h-screen bg-white">
       <header className="container mx-auto px-4 py-4 flex items-center justify-between sticky top-0 z-10 bg-white border-b">
-        <Link to="/dashboard" className="text-gray-600 hover:text-gray-900 flex items-center gap-1 transition-colors">
+        <Link to="/" className="text-gray-600 hover:text-gray-900 flex items-center gap-1 transition-colors">
           <ArrowLeft className="w-4 h-4" />
-          <span className={isMobile ? "sr-only" : ""}>Back to Dashboard</span>
+          <span className={isMobile ? "sr-only" : ""}>Back to Home</span>
         </Link>
         <Button 
           variant="outline" 
@@ -200,7 +200,7 @@ const Portfolio = () => {
           
           <CardHeader className="text-center pt-16 sm:pt-20 pb-0">
             <CardTitle className="text-2xl sm:text-3xl font-bold mb-2 text-gray-900">
-              {profile.name || "Artist Portfolio"}
+              {profile.name || "MOTOJOJO Portfolio"}
             </CardTitle>
             
             {profile.artistType && (
@@ -327,12 +327,12 @@ const Portfolio = () => {
             </div>
           )}
           
-          {/* Spotify Tracks Section */}
+          {/* Music Section - Only show if tracks exist */}
           {tracks.length > 0 && (
             <div className="mb-10">
               <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-gray-900">
                 <Music className="w-5 h-5 text-green-600" />
-                <span>Spotify</span>
+                <span>Music</span>
                 {profile.spotify && <span className="text-base font-normal text-gray-500">@{profile.spotify}</span>}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

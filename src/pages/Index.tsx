@@ -2,28 +2,18 @@
 import { SignedIn, SignedOut, useAuth } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Image, Palette, Users, Search, Calendar } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { ArrowRight, Image, Palette, Users, Calendar } from "lucide-react";
 
 const Index = () => {
   const { isSignedIn } = useAuth();
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
-  
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate(`/portfolio/${searchTerm.trim()}`);
-    }
-  };
   
   return (
     <div className="min-h-screen bg-white">
       <header className="container mx-auto px-4 py-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Palette className="w-8 h-8 text-gray-900" />
-          <h1 className="text-2xl font-bold text-gray-900">ArtistPortfolio</h1>
+          <h1 className="text-2xl font-bold text-gray-900">MOTOJOJO</h1>
         </div>
         
         <div className="flex items-center gap-4">
@@ -52,20 +42,6 @@ const Index = () => {
             Create a stunning portfolio that showcases your work. Connect your social media 
             accounts, upload your best pieces, and share your creative journey with the world.
           </p>
-          
-          <form onSubmit={handleSearch} className="flex max-w-md mx-auto mb-8 gap-2">
-            <Input
-              type="text"
-              placeholder="Search artist portfolios..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit" className="bg-gray-900 hover:bg-gray-800 text-white">
-              <Search className="h-4 w-4 mr-2" />
-              Search
-            </Button>
-          </form>
           
           <SignedOut>
             <Button asChild size="lg" className="bg-gray-900 hover:bg-gray-800 text-white">

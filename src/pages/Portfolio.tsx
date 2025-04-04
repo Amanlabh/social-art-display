@@ -181,12 +181,12 @@ const Portfolio = () => {
       </header>
       
       <main className="container mx-auto px-4 py-8">
-        <Card className="max-w-4xl mx-auto border shadow overflow-hidden bg-white rounded-xl mb-8">
+        <Card className="max-w-4xl mx-auto border shadow hover:shadow-md transition-all duration-300 overflow-hidden bg-white rounded-xl mb-8 animate-fade-in">
           <div className="relative">
-            <div className="h-32 bg-gray-100" />
+            <div className="h-32 bg-gradient-to-r from-gray-100 to-gray-200" />
             
             <div className="relative flex justify-center">
-              <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-white shadow-md absolute -top-12 sm:-top-16">
+              <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-white shadow-md absolute -top-12 sm:-top-16 hover:scale-105 transition-transform">
                 {profile.profilePicture ? (
                   <AvatarImage src={profile.profilePicture} alt={profile.name} />
                 ) : (
@@ -204,7 +204,7 @@ const Portfolio = () => {
             </CardTitle>
             
             {profile.artistType && (
-              <div className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-full mb-3 font-medium text-sm">
+              <div className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 rounded-full mb-3 font-medium text-sm hover:bg-gray-200 transition-colors">
                 {getArtistTypeIcon()}
                 <span className="ml-1.5">{profile.artistType}</span>
               </div>
@@ -220,11 +220,11 @@ const Portfolio = () => {
             <div className="flex justify-center gap-6">
               {profile.website && (
                 <a href={profile.website} target="_blank" rel="noopener noreferrer" 
-                   className="text-gray-600 hover:text-gray-900 transition-colors">
+                   className="text-gray-600 hover:text-gray-900 transition-colors hover:scale-110">
                   <Globe className="w-5 h-5" />
                 </a>
               )}
-              <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+              <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors hover:scale-110">
                 <Mail className="w-5 h-5" />
               </a>
               {socialConnections.instagram.connected && (
@@ -232,7 +232,7 @@ const Portfolio = () => {
                   href={`https://instagram.com/${profile.instagram}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-pink-600 transition-colors"
+                  className="text-gray-600 hover:text-pink-600 transition-colors hover:scale-110"
                 >
                   <Instagram className="w-5 h-5" />
                 </a>
@@ -242,7 +242,7 @@ const Portfolio = () => {
                   href={`https://twitter.com/${profile.twitter}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-blue-500 transition-colors"
+                  className="text-gray-600 hover:text-blue-500 transition-colors hover:scale-110"
                 >
                   <Twitter className="w-5 h-5" />
                 </a>
@@ -252,7 +252,7 @@ const Portfolio = () => {
                   href={`https://open.spotify.com/user/${profile.spotify}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-green-500 transition-colors"
+                  className="text-gray-600 hover:text-green-500 transition-colors hover:scale-110"
                 >
                   <Music className="w-5 h-5" />
                 </a>
@@ -264,14 +264,18 @@ const Portfolio = () => {
         <div className="max-w-5xl mx-auto">
           {/* Upcoming Events Section */}
           {upcomingEvents.length > 0 && (
-            <div className="mb-10">
+            <div className="mb-10 animate-fade-in">
               <h2 className="text-xl font-bold mb-5 text-gray-900 flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-gray-700" />
                 <span>Upcoming Events</span>
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {upcomingEvents.map(event => (
-                  <Card key={event.id} className="border shadow-sm hover:shadow-md transition-all duration-300">
+                {upcomingEvents.map((event, index) => (
+                  <Card 
+                    key={event.id} 
+                    className="border shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-4px]"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
                         <CardTitle className="text-lg">{event.title}</CardTitle>
@@ -298,14 +302,18 @@ const Portfolio = () => {
             </div>
           )}
 
-          {/* Artwork Section */}
+          {/* Artwork Section - Only show uploaded images */}
           {uploadedImages.length > 0 ? (
-            <div className="mb-10">
+            <div className="mb-10 animate-fade-in" style={{ animationDelay: "200ms" }}>
               <h2 className="text-xl font-bold mb-5 text-gray-900">My Artwork</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {uploadedImages.map(image => (
-                  <div key={image.id} className="group">
-                    <div className="relative overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-all duration-300">
+                {uploadedImages.map((image, index) => (
+                  <div 
+                    key={image.id} 
+                    className="group animate-scale-in" 
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="relative overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105">
                       <AspectRatio ratio={1/1}>
                         <img 
                           src={image.url} 
@@ -319,7 +327,7 @@ const Portfolio = () => {
               </div>
             </div>
           ) : (
-            <div className="text-center p-12 border border-dashed rounded-lg border-gray-200 bg-gray-50 mb-10">
+            <div className="text-center p-12 border border-dashed rounded-lg border-gray-200 bg-gray-50 mb-10 animate-fade-in">
               <h3 className="text-lg font-medium text-gray-700 mb-2">No Artwork Uploaded Yet</h3>
               <p className="text-gray-500 max-w-md mx-auto">
                 This artist hasn't uploaded any artwork to their portfolio yet.
@@ -329,15 +337,19 @@ const Portfolio = () => {
           
           {/* Music Section - Only show if tracks exist */}
           {tracks.length > 0 && (
-            <div className="mb-10">
+            <div className="mb-10 animate-fade-in" style={{ animationDelay: "400ms" }}>
               <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-gray-900">
                 <Music className="w-5 h-5 text-green-600" />
                 <span>Music</span>
                 {profile.spotify && <span className="text-base font-normal text-gray-500">@{profile.spotify}</span>}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {tracks.map(track => (
-                  <Card key={track.id} className="overflow-hidden border shadow-sm hover:shadow-md transition-all duration-300 bg-white">
+                {tracks.map((track, index) => (
+                  <Card 
+                    key={track.id} 
+                    className="overflow-hidden border shadow-sm hover:shadow-md transition-all duration-300 bg-white hover:translate-y-[-4px]"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
                     <div className="relative h-44">
                       <img 
                         src={track.coverUrl} 

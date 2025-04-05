@@ -3,32 +3,39 @@ import { createContext, useContext, ReactNode, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// Mock UploadThing response structure
+// Type for upload file response
 type UploadFileResponse = {
   url: string;
 };
 
-// Mock upload function that uses Supabase storage
-const mockUpload = async (files: File[]): Promise<UploadFileResponse[]> => {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
+// Real upload function using Supabase storage
+const uploadToSupabase = async (files: File[]): Promise<UploadFileResponse[]> => {
   const responses: UploadFileResponse[] = [];
   
   for (const file of files) {
     try {
-      // In a real implementation with Supabase storage, we would do:
-      // const { data, error } = await supabase.storage
-      //   .from('images')
-      //   .upload(`${Date.now()}-${file.name}`, file);
-      // 
-      // if (error) throw error;
-      // const url = supabase.storage.from('images').getPublicUrl(data.path).data.publicUrl;
-
-      // For development, use object URLs
-      console.log(`Mocking upload of file: ${file.name} (${file.size} bytes)`);
-      const url = URL.createObjectURL(file);
-      console.log(`Generated URL: ${url}`);
+      console.log(`Uploading file to Supabase: ${file.name} (${file.size} bytes)`);
+      
+      // Generate a unique filename to avoid collisions
+      const uniqueFileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+      
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('images')
+        .upload(uniqueFileName, file);
+      
+      if (error) {
+        console.error("Supabase upload error:", error);
+        throw error;
+      }
+      
+      // Get the public URL for the uploaded file
+      const { data: urlData } = supabase.storage
+        .from('images')
+        .getPublicUrl(uniqueFileName);
+      
+      const url = urlData.publicUrl;
+      console.log(`File uploaded successfully. Public URL: ${url}`);
       responses.push({ url });
     } catch (error) {
       console.error("Upload error:", error);
@@ -39,7 +46,7 @@ const mockUpload = async (files: File[]): Promise<UploadFileResponse[]> => {
   return responses;
 };
 
-// Mock hook for uploading files
+// Hook for uploading files
 export const useUploadThing = (endpoint: string) => {
   const [isUploading, setIsUploading] = useState(false);
   
@@ -48,7 +55,7 @@ export const useUploadThing = (endpoint: string) => {
     console.log(`Starting upload of ${files.length} files to endpoint: ${endpoint}`);
     
     try {
-      const response = await mockUpload(files);
+      const response = await uploadToSupabase(files);
       console.log("Upload complete, responses:", response);
       return response;
     } catch (error) {
@@ -62,10 +69,10 @@ export const useUploadThing = (endpoint: string) => {
   return { startUpload, isUploading };
 };
 
-// Mock function for uploading files directly
+// Direct upload function
 export const uploadFiles = async (files: File[]): Promise<UploadFileResponse[]> => {
   console.log(`Uploading ${files.length} files directly`);
-  return await mockUpload(files);
+  return await uploadToSupabase(files);
 };
 
 // Context for UploadThing provider

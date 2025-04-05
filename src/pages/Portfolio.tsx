@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Instagram, Twitter, Globe, Mail, ArrowLeft, Music, Share2, Brush, Theater, Mic, PenTool, Calendar } from "lucide-react";
+import { Instagram, Twitter, Globe, Mail, ArrowLeft, Music, Share2, Brush, Theater, Mic, PenTool, Calendar, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -66,63 +65,49 @@ const Portfolio = () => {
   });
 
   useEffect(() => {
-    // Load data from Supabase when component mounts
     const loadPortfolioData = async () => {
       if (!id) return;
       
       setIsLoading(true);
       
       try {
-        // Try to fetch by slug first
+        console.log("Loading portfolio with ID:", id);
+        
         let portfolio = await getPortfolioBySlug(id);
         
-        // If not found by slug, try by ID
         if (!portfolio) {
           portfolio = await getPortfolioById(id);
         }
         
-        // If portfolio found, fetch associated data
         if (portfolio) {
+          console.log("Portfolio found:", portfolio);
           setPortfolioData(portfolio);
           
-          // Fetch user profile
           const userProfile = await getUserProfile(portfolio.user_id);
           if (userProfile) {
-            setProfile({
-              id: userProfile.id,
-              full_name: userProfile.full_name || "",
-              email: userProfile.email,
-              username: userProfile.username || "",
-              profile_image_url: userProfile.profile_image_url || "",
-              created_at: userProfile.created_at
-            });
+            console.log("User profile found:", userProfile);
+            setProfile(userProfile);
           }
           
-          // Fetch portfolio images
           const portfolioImages = await getImagesForPortfolio(portfolio.id);
+          console.log("Portfolio images:", portfolioImages);
           setImages(portfolioImages);
         } else if (id === "my-portfolio") {
-          // Special case for "my-portfolio" - show current user's portfolio
           const { data: { user } } = await supabase.auth.getUser();
           
           if (user) {
             const userProfile = await getUserProfile(user.id);
             if (userProfile) {
-              setProfile({
-                id: userProfile.id,
-                full_name: userProfile.full_name || "",
-                email: userProfile.email,
-                username: userProfile.username || "",
-                profile_image_url: userProfile.profile_image_url || "",
-                created_at: userProfile.created_at
-              });
+              console.log("Current user profile:", userProfile);
+              setProfile(userProfile);
             }
             
-            // Fetch user images
             const userImages = await getImagesForUser(user.id);
+            console.log("User images:", userImages);
             setImages(userImages);
           }
         } else {
+          console.error("Portfolio not found for ID:", id);
           toast.error("Portfolio not found");
         }
       } catch (error: any) {
@@ -132,7 +117,6 @@ const Portfolio = () => {
         setIsLoading(false);
       }
       
-      // Load backup data from localStorage if needed
       const savedTracks = localStorage.getItem("userTracks");
       if (savedTracks) {
         setTracks(JSON.parse(savedTracks));
@@ -206,17 +190,16 @@ const Portfolio = () => {
     return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
   };
 
-  // Get upcoming events (events with dates in the future)
   const upcomingEvents = events
     .filter(event => new Date(event.date) >= new Date())
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="container mx-auto px-4 py-4 flex items-center justify-between sticky top-0 z-10 bg-white border-b">
+    <div className="min-h-screen bg-gray-50">
+      <header className="container mx-auto px-4 py-4 flex items-center justify-between sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b">
         <Link to="/" className="text-gray-600 hover:text-gray-900 flex items-center gap-1 transition-colors">
           <ArrowLeft className="w-4 h-4" />
-          <span className={isMobile ? "sr-only" : ""}>Back to Home</span>
+          <span className={isMobile ? "sr-only" : ""}>Back</span>
         </Link>
         <Button 
           variant="outline" 
@@ -244,16 +227,16 @@ const Portfolio = () => {
         </div>
       ) : (
         <main className="container mx-auto px-4 py-8">
-          <Card className="max-w-4xl mx-auto border shadow hover:shadow-md transition-all duration-300 overflow-hidden bg-white rounded-xl mb-8 animate-fade-in">
+          <Card className="max-w-4xl mx-auto border-none shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden bg-white rounded-xl mb-8 animate-fade-in">
             <div className="relative">
-              <div className="h-32 bg-gradient-to-r from-gray-100 to-gray-200" />
+              <div className="h-24 sm:h-32 bg-gradient-to-r from-purple-100 to-blue-100" />
               
               <div className="relative flex justify-center">
                 <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-white shadow-md absolute -top-12 sm:-top-16 hover:scale-105 transition-transform">
                   {profile?.profile_image_url ? (
                     <AvatarImage src={profile.profile_image_url} alt={profile.full_name || ""} />
                   ) : (
-                    <AvatarFallback className="bg-gray-200 text-gray-700 text-2xl sm:text-4xl">
+                    <AvatarFallback className="bg-gradient-to-br from-purple-100 to-blue-200 text-gray-700 text-2xl sm:text-4xl">
                       {getInitials()}
                     </AvatarFallback>
                   )}
@@ -321,18 +304,51 @@ const Portfolio = () => {
           </Card>
           
           <div className="max-w-5xl mx-auto">
-            {/* Upcoming Events Section */}
+            <div className="mb-10 animate-fade-in" style={{ animationDelay: "100ms" }}>
+              <h2 className="text-xl font-medium mb-5 text-gray-900 flex items-center gap-2">
+                <Camera className="h-5 w-5 text-gray-700" />
+                <span>Portfolio</span>
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {images.map((image, index) => (
+                  <div 
+                    key={image.id} 
+                    className="group animate-scale-in relative overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-all duration-300" 
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <AspectRatio ratio={1/1}>
+                      <img 
+                        src={image.image_url} 
+                        alt="Artwork" 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </AspectRatio>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {images.length === 0 && (
+              <div className="text-center p-12 border border-dashed rounded-lg border-gray-200 bg-white mb-10 animate-fade-in">
+                <Camera className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                <h3 className="text-lg font-medium text-gray-700 mb-2">No Artwork Uploaded Yet</h3>
+                <p className="text-gray-500 max-w-md mx-auto">
+                  This artist hasn't uploaded any artwork to their portfolio yet.
+                </p>
+              </div>
+            )}
+            
             {upcomingEvents.length > 0 && (
-              <div className="mb-10 animate-fade-in">
-                <h2 className="text-xl font-bold mb-5 text-gray-900 flex items-center gap-2">
+              <div className="mb-10 animate-fade-in" style={{ animationDelay: "200ms" }}>
+                <h2 className="text-xl font-medium mb-5 text-gray-900 flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-gray-700" />
                   <span>Upcoming Events</span>
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   {upcomingEvents.map((event, index) => (
                     <Card 
                       key={event.id} 
-                      className="border shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-4px]"
+                      className="border-none shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-4px]"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <CardHeader className="pb-2">
@@ -360,45 +376,11 @@ const Portfolio = () => {
                 </div>
               </div>
             )}
-
-            {/* Artwork Section - Show images from Supabase */}
-            {images.length > 0 ? (
-              <div className="mb-10 animate-fade-in" style={{ animationDelay: "200ms" }}>
-                <h2 className="text-xl font-bold mb-5 text-gray-900">My Artwork</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {images.map((image, index) => (
-                    <div 
-                      key={image.id} 
-                      className="group animate-scale-in" 
-                      style={{ animationDelay: `${index * 100}ms` }}
-                    >
-                      <div className="relative overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105">
-                        <AspectRatio ratio={1/1}>
-                          <img 
-                            src={image.image_url} 
-                            alt="Artwork" 
-                            className="w-full h-full object-cover"
-                          />
-                        </AspectRatio>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center p-12 border border-dashed rounded-lg border-gray-200 bg-gray-50 mb-10 animate-fade-in">
-                <h3 className="text-lg font-medium text-gray-700 mb-2">No Artwork Uploaded Yet</h3>
-                <p className="text-gray-500 max-w-md mx-auto">
-                  This artist hasn't uploaded any artwork to their portfolio yet.
-                </p>
-              </div>
-            )}
             
-            {/* Music Section - Only show if tracks exist */}
             {tracks.length > 0 && (
-              <div className="mb-10 animate-fade-in" style={{ animationDelay: "400ms" }}>
-                <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-gray-900">
-                  <Music className="w-5 h-5 text-green-600" />
+              <div className="mb-10 animate-fade-in" style={{ animationDelay: "300ms" }}>
+                <h2 className="text-xl font-medium mb-5 flex items-center gap-2 text-gray-900">
+                  <Music className="w-5 h-5 text-gray-700" />
                   <span>Music</span>
                   {socialConnections.spotify.username && (
                     <span className="text-base font-normal text-gray-500">
@@ -406,11 +388,11 @@ const Portfolio = () => {
                     </span>
                   )}
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {tracks.map((track, index) => (
                     <Card 
                       key={track.id} 
-                      className="overflow-hidden border shadow-sm hover:shadow-md transition-all duration-300 bg-white hover:translate-y-[-4px]"
+                      className="overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 bg-white hover:translate-y-[-4px]"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <div className="relative h-44">
@@ -419,7 +401,7 @@ const Portfolio = () => {
                           alt={track.album}
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-black/40 flex flex-col justify-end p-3 text-white">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-3 text-white">
                           <h3 className="font-bold truncate">{track.title}</h3>
                           <p className="text-sm text-white/90 truncate">{track.artist}</p>
                         </div>

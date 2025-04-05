@@ -4,12 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Upload, X } from "lucide-react";
 import { useUploadThing } from "@/lib/uploadthing";
 import { toast } from "sonner";
+import { saveImage } from "@/services/portfolioService";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ImageUploaderProps {
   onImagesUploaded: (urls: string[]) => void;
+  portfolioId?: string;
+  userId?: string;
 }
 
-export default function ImageUploader({ onImagesUploaded }: ImageUploaderProps) {
+export default function ImageUploader({ onImagesUploaded, portfolioId, userId }: ImageUploaderProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -44,16 +48,37 @@ export default function ImageUploader({ onImagesUploaded }: ImageUploaderProps) 
       setUploading(true);
       toast.info("Uploading images...");
       
-      // For testing purposes in our mock implementation,
-      // we'll create URLs from the files directly
+      // Create a mock upload for development purposes
+      // In a real app, this would use actual file uploads to a storage service
       const imageUrls = files.map(file => URL.createObjectURL(file));
-      onImagesUploaded(imageUrls);
-      toast.success("Images uploaded successfully!");
       
-      // Clear previews and files after successful upload
-      previews.forEach(preview => URL.revokeObjectURL(preview));
-      setFiles([]);
-      setPreviews([]);
+      // Save images to database
+      const savedImages = await Promise.all(
+        imageUrls.map(url => 
+          saveImage({
+            image_url: url,
+            portfolio_id: portfolioId || null,
+            user_id: userId || null
+          })
+        )
+      );
+
+      // Return the URLs of successfully saved images
+      const successfulUrls = savedImages
+        .filter(Boolean)
+        .map(image => image!.image_url);
+      
+      if (successfulUrls.length > 0) {
+        onImagesUploaded(successfulUrls);
+        toast.success(`${successfulUrls.length} images uploaded successfully!`);
+        
+        // Clear previews and files after successful upload
+        previews.forEach(preview => URL.revokeObjectURL(preview));
+        setFiles([]);
+        setPreviews([]);
+      } else {
+        toast.error("Failed to save images to your portfolio");
+      }
       
     } catch (error) {
       toast.error("Failed to upload images. Please try again.");

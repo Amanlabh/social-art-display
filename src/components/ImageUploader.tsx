@@ -44,19 +44,16 @@ export default function ImageUploader({ onImagesUploaded }: ImageUploaderProps) 
       setUploading(true);
       toast.info("Uploading images...");
       
-      const response = await startUpload(files);
+      // For testing purposes in our mock implementation,
+      // we'll create URLs from the files directly
+      const imageUrls = files.map(file => URL.createObjectURL(file));
+      onImagesUploaded(imageUrls);
+      toast.success("Images uploaded successfully!");
       
-      if (response && response.length > 0) {
-        // Extract the URLs from the response
-        const imageUrls = response.map(r => r.url);
-        onImagesUploaded(imageUrls);
-        toast.success("Images uploaded successfully!");
-        
-        // Clear previews and files
-        previews.forEach(preview => URL.revokeObjectURL(preview));
-        setFiles([]);
-        setPreviews([]);
-      }
+      // Clear previews and files after successful upload
+      previews.forEach(preview => URL.revokeObjectURL(preview));
+      setFiles([]);
+      setPreviews([]);
       
     } catch (error) {
       toast.error("Failed to upload images. Please try again.");

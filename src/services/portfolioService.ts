@@ -164,6 +164,7 @@ export async function getImagesForUser(userId: string): Promise<Image[]> {
       .eq('user_id', userId);
 
     if (error) throw error;
+    console.log('Images fetched for user:', data);
     return data || [];
   } catch (error: any) {
     console.error('Error fetching user images:', error.message);
@@ -177,6 +178,7 @@ export async function saveImage(image: {
   user_id?: string | null;
 }): Promise<Image | null> {
   try {
+    console.log('Saving image:', image);
     const { data, error } = await supabase
       .from('images')
       .insert(image)
@@ -184,6 +186,7 @@ export async function saveImage(image: {
       .single();
 
     if (error) throw error;
+    console.log('Image saved successfully:', data);
     return data as Image;
   } catch (error: any) {
     console.error('Error saving image:', error.message);

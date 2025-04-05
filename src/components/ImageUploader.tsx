@@ -30,6 +30,9 @@ export default function ImageUploader({ onImagesUploaded }: ImageUploaderProps) 
   };
 
   const handleRemovePreview = (index: number) => {
+    // Revoke the object URL to avoid memory leaks
+    URL.revokeObjectURL(previews[index]);
+    
     setPreviews(prev => prev.filter((_, i) => i !== index));
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
@@ -44,10 +47,13 @@ export default function ImageUploader({ onImagesUploaded }: ImageUploaderProps) 
       const response = await startUpload(files);
       
       if (response && response.length > 0) {
-        // Correctly access the fileUrl from the response
+        // Extract the URLs from the response
         const imageUrls = response.map(r => r.url);
         onImagesUploaded(imageUrls);
         toast.success("Images uploaded successfully!");
+        
+        // Clear previews and files
+        previews.forEach(preview => URL.revokeObjectURL(preview));
         setFiles([]);
         setPreviews([]);
       }

@@ -48,11 +48,22 @@ export default function ImageUploader({ onImagesUploaded, portfolioId, userId }:
       setUploading(true);
       toast.info("Uploading images...");
       
-      // Create a mock upload for development purposes
-      // In a real app, this would use actual file uploads to a storage service
-      const imageUrls = files.map(file => URL.createObjectURL(file));
+      console.log("Starting upload with files:", files.length);
+      console.log("Portfolio ID:", portfolioId);
+      console.log("User ID:", userId);
       
-      // Save images to database
+      // Upload files using UploadThing (this is a mock function in development)
+      const imageUrls = await Promise.all(
+        files.map(async (file) => {
+          // In a real implementation this would use Supabase storage
+          // For now, we'll use object URLs as placeholders
+          return URL.createObjectURL(file);
+        })
+      );
+      
+      console.log("Generated image URLs:", imageUrls);
+      
+      // Save images to database with explicit properties
       const savedImages = await Promise.all(
         imageUrls.map(url => 
           saveImage({
@@ -62,8 +73,10 @@ export default function ImageUploader({ onImagesUploaded, portfolioId, userId }:
           })
         )
       );
+      
+      console.log("Saved images results:", savedImages);
 
-      // Return the URLs of successfully saved images
+      // Filter out null results and extract URLs
       const successfulUrls = savedImages
         .filter(Boolean)
         .map(image => image!.image_url);
@@ -81,8 +94,8 @@ export default function ImageUploader({ onImagesUploaded, portfolioId, userId }:
       }
       
     } catch (error) {
-      toast.error("Failed to upload images. Please try again.");
       console.error("Upload error:", error);
+      toast.error("Failed to upload images. Please try again.");
     } finally {
       setUploading(false);
     }

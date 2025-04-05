@@ -16,10 +16,24 @@ const mockUpload = async (files: File[]): Promise<UploadFileResponse[]> => {
   const responses: UploadFileResponse[] = [];
   
   for (const file of files) {
-    // In a real implementation, this would upload to Supabase storage
-    // For now, just create object URLs for development
-    const url = URL.createObjectURL(file);
-    responses.push({ url });
+    try {
+      // In a real implementation with Supabase storage, we would do:
+      // const { data, error } = await supabase.storage
+      //   .from('images')
+      //   .upload(`${Date.now()}-${file.name}`, file);
+      // 
+      // if (error) throw error;
+      // const url = supabase.storage.from('images').getPublicUrl(data.path).data.publicUrl;
+
+      // For development, use object URLs
+      console.log(`Mocking upload of file: ${file.name} (${file.size} bytes)`);
+      const url = URL.createObjectURL(file);
+      console.log(`Generated URL: ${url}`);
+      responses.push({ url });
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error(`Failed to upload ${file.name}`);
+    }
   }
   
   return responses;
@@ -31,9 +45,15 @@ export const useUploadThing = (endpoint: string) => {
   
   const startUpload = async (files: File[]): Promise<UploadFileResponse[]> => {
     setIsUploading(true);
+    console.log(`Starting upload of ${files.length} files to endpoint: ${endpoint}`);
+    
     try {
       const response = await mockUpload(files);
+      console.log("Upload complete, responses:", response);
       return response;
+    } catch (error) {
+      console.error("Upload failed:", error);
+      throw error;
     } finally {
       setIsUploading(false);
     }
@@ -44,6 +64,7 @@ export const useUploadThing = (endpoint: string) => {
 
 // Mock function for uploading files directly
 export const uploadFiles = async (files: File[]): Promise<UploadFileResponse[]> => {
+  console.log(`Uploading ${files.length} files directly`);
   return await mockUpload(files);
 };
 

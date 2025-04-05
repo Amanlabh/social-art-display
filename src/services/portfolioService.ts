@@ -114,6 +114,8 @@ export async function createPortfolio(portfolioData: {
   is_public?: boolean;
 }): Promise<Portfolio | null> {
   try {
+    console.log("Creating portfolio with data:", portfolioData);
+    
     const { data, error } = await supabase
       .from('portfolios')
       .insert({
@@ -126,7 +128,12 @@ export async function createPortfolio(portfolioData: {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Portfolio creation error:", error);
+      throw error;
+    }
+    
+    console.log("Portfolio created successfully:", data);
     return data as Portfolio;
   } catch (error: any) {
     console.error('Error creating portfolio:', error.message);
@@ -199,7 +206,14 @@ export async function saveImage(imageData: {
   user_id?: string | null;
 }): Promise<Image | null> {
   try {
-    console.log('Saving image:', imageData);
+    console.log('Saving image with data:', imageData);
+    
+    // Verify required fields are present
+    if (!imageData.image_url) {
+      throw new Error("Image URL is required");
+    }
+    
+    // Insert the image into the database
     const { data, error } = await supabase
       .from('images')
       .insert({
@@ -210,11 +224,16 @@ export async function saveImage(imageData: {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error in Supabase insert:', error);
+      throw error;
+    }
+    
     console.log('Image saved successfully:', data);
     return data as Image;
   } catch (error: any) {
-    console.error('Error saving image:', error.message);
+    console.error('Error saving image:', error);
+    console.error('Error details:', error.message);
     return null;
   }
 }

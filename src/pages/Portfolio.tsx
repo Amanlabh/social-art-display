@@ -76,6 +76,7 @@ const Portfolio = () => {
         let portfolio = await getPortfolioBySlug(id);
         
         if (!portfolio) {
+          console.log("No portfolio found by slug, trying with ID");
           portfolio = await getPortfolioById(id);
         }
         
@@ -89,6 +90,7 @@ const Portfolio = () => {
             setProfile(userProfile);
           }
           
+          console.log("Fetching images for portfolio ID:", portfolio.id);
           const portfolioImages = await getImagesForPortfolio(portfolio.id);
           console.log("Portfolio images:", portfolioImages);
           setImages(portfolioImages);
@@ -137,12 +139,21 @@ const Portfolio = () => {
   }, [id]);
 
   const sharePortfolio = () => {
+    let shareUrl = window.location.href;
+    
+    if (portfolioData?.id && window.location.pathname.includes("my-portfolio")) {
+      const baseUrl = window.location.origin;
+      shareUrl = `${baseUrl}/portfolio/${portfolioData.slug || portfolioData.id}`;
+    }
+    
     const portfolioName = profile?.full_name || "Artist";
     const shareData = {
       title: `${portfolioName}'s Portfolio`,
       text: `Check out ${portfolioName}'s portfolio!`,
-      url: window.location.href,
+      url: shareUrl,
     };
+    
+    console.log("Sharing portfolio with URL:", shareUrl);
     
     if (navigator.share && navigator.canShare(shareData)) {
       navigator.share(shareData)
@@ -310,7 +321,7 @@ const Portfolio = () => {
                 <span>Portfolio</span>
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {images.map((image, index) => (
+                {images && images.length > 0 ? images.map((image, index) => (
                   <div 
                     key={image.id} 
                     className="group animate-scale-in relative overflow-hidden rounded-lg shadow-sm hover:shadow-lg transition-all duration-300" 
@@ -321,22 +332,24 @@ const Portfolio = () => {
                         src={image.image_url} 
                         alt="Artwork" 
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        onError={(e) => {
+                          console.error("Failed to load image:", image.image_url);
+                          (e.target as HTMLImageElement).src = "/placeholder.svg";
+                        }}
                       />
                     </AspectRatio>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center p-12 border border-dashed rounded-lg border-gray-200 bg-white mb-10 animate-fade-in col-span-full">
+                    <Camera className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-2">No Artwork Uploaded Yet</h3>
+                    <p className="text-gray-500 max-w-md mx-auto">
+                      This artist hasn't uploaded any artwork to their portfolio yet.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
-            
-            {images.length === 0 && (
-              <div className="text-center p-12 border border-dashed rounded-lg border-gray-200 bg-white mb-10 animate-fade-in">
-                <Camera className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                <h3 className="text-lg font-medium text-gray-700 mb-2">No Artwork Uploaded Yet</h3>
-                <p className="text-gray-500 max-w-md mx-auto">
-                  This artist hasn't uploaded any artwork to their portfolio yet.
-                </p>
-              </div>
-            )}
             
             {upcomingEvents.length > 0 && (
               <div className="mb-10 animate-fade-in" style={{ animationDelay: "200ms" }}>
@@ -400,6 +413,9 @@ const Portfolio = () => {
                           src={track.coverUrl} 
                           alt={track.album}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/placeholder.svg";
+                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-3 text-white">
                           <h3 className="font-bold truncate">{track.title}</h3>

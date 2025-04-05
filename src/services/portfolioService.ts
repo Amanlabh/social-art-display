@@ -55,7 +55,7 @@ export async function getPortfolioBySlug(slug: string): Promise<Portfolio | null
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Portfolio;
   } catch (error: any) {
     console.error('Error fetching portfolio:', error.message);
     return null;
@@ -71,7 +71,7 @@ export async function getPortfolioById(id: string): Promise<Portfolio | null> {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Portfolio;
   } catch (error: any) {
     console.error('Error fetching portfolio:', error.message);
     return null;
@@ -87,14 +87,20 @@ export async function getUserPortfolio(userId: string): Promise<Portfolio | null
       .single();
 
     if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
-    return data || null;
+    return data as Portfolio || null;
   } catch (error: any) {
     console.error('Error fetching user portfolio:', error.message);
     return null;
   }
 }
 
-export async function createPortfolio(portfolio: Partial<Portfolio>): Promise<Portfolio | null> {
+export async function createPortfolio(portfolio: {
+  title: string;
+  description?: string | null;
+  user_id: string;
+  slug?: string | null;
+  is_public?: boolean;
+}): Promise<Portfolio | null> {
   try {
     const { data, error } = await supabase
       .from('portfolios')
@@ -103,7 +109,7 @@ export async function createPortfolio(portfolio: Partial<Portfolio>): Promise<Po
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Portfolio;
   } catch (error: any) {
     console.error('Error creating portfolio:', error.message);
     toast.error("Failed to create portfolio");
@@ -111,7 +117,12 @@ export async function createPortfolio(portfolio: Partial<Portfolio>): Promise<Po
   }
 }
 
-export async function updatePortfolio(id: string, updates: Partial<Portfolio>): Promise<Portfolio | null> {
+export async function updatePortfolio(id: string, updates: {
+  title?: string;
+  description?: string | null;
+  slug?: string | null;
+  is_public?: boolean;
+}): Promise<Portfolio | null> {
   try {
     const { data, error } = await supabase
       .from('portfolios')
@@ -122,7 +133,7 @@ export async function updatePortfolio(id: string, updates: Partial<Portfolio>): 
 
     if (error) throw error;
     toast.success("Portfolio updated successfully");
-    return data;
+    return data as Portfolio;
   } catch (error: any) {
     console.error('Error updating portfolio:', error.message);
     toast.error("Failed to update portfolio");
@@ -160,7 +171,11 @@ export async function getImagesForUser(userId: string): Promise<Image[]> {
   }
 }
 
-export async function saveImage(image: Partial<Image>): Promise<Image | null> {
+export async function saveImage(image: {
+  image_url: string;
+  portfolio_id?: string | null;
+  user_id?: string | null;
+}): Promise<Image | null> {
   try {
     const { data, error } = await supabase
       .from('images')
@@ -169,7 +184,7 @@ export async function saveImage(image: Partial<Image>): Promise<Image | null> {
       .single();
 
     if (error) throw error;
-    return data;
+    return data as Image;
   } catch (error: any) {
     console.error('Error saving image:', error.message);
     return null;

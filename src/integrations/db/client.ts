@@ -1,13 +1,13 @@
 
-import { Pool } from 'pg';
+import { Pool, QueryResult } from 'pg';
 
 // Create a PostgreSQL connection pool to Neon DB
 export const pool = new Pool({
-  connectionString: 'postgresql://neondb_owner:npg_1C4YNXgxeZln@ep-dry-cake-a4zbjonp-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require',
+  connectionString: process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_1C4YNXgxeZln@ep-dry-cake-a4zbjonp-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require',
 });
 
 // Helper function for running SQL queries
-export async function query(text: string, params: any[] = []) {
+export async function query(text: string, params: any[] = []): Promise<QueryResult> {
   try {
     const start = Date.now();
     const res = await pool.query(text, params);

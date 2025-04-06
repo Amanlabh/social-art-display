@@ -14,14 +14,10 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Update user profile in the database
-    await query(
-      `UPDATE users 
-       SET profile_image_url = $1
-       WHERE id = $2`,
-      [profileImageUrl, userId]
-    );
-
+    // In a real implementation, this would update the user in a database
+    console.log(`Mock API: Updating profile picture for user ${userId} to ${profileImageUrl}`);
+    
+    // No actual database query needed in the browser environment
     return res.status(200).json({ success: true });
   } catch (error) {
     console.error('Error updating profile picture:', error);

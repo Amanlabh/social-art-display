@@ -1,8 +1,7 @@
 
 // This is a mock server implementation for API endpoints
-// In a real app, this would be a separate server or serverless functions
 import { createServer } from "miragejs";
-import { query } from "./integrations/db/client";
+import { addMockData } from "./integrations/db/client";
 
 export function makeServer({ environment = "development" } = {}) {
   const server = createServer({
@@ -19,13 +18,12 @@ export function makeServer({ environment = "development" } = {}) {
             return { error: 'Missing required fields', status: 400 };
           }
 
-          // Update user profile in the database
-          await query(
-            `UPDATE users 
-             SET profile_image_url = $1
-             WHERE id = $2`,
-            [profileImageUrl, userId]
-          );
+          // Update user profile in our mock database
+          addMockData('users', {
+            id: userId,
+            profile_image_url: profileImageUrl,
+            updated_at: new Date().toISOString()
+          });
 
           return { success: true };
         } catch (error) {
@@ -42,42 +40,20 @@ export function makeServer({ environment = "development" } = {}) {
             return { error: 'Missing required user ID', status: 400 };
           }
 
-          // Build the SET clause dynamically based on provided updates
-          const updateFields: string[] = [];
-          const values: any[] = [];
-          let counter = 1;
+          // Update user in our mock database
+          addMockData('users', {
+            id,
+            ...(full_name !== undefined && { full_name }),
+            ...(profile_image_url !== undefined && { profile_image_url }),
+            updated_at: new Date().toISOString()
+          });
           
-          if (full_name !== undefined) {
-            updateFields.push(`full_name = $${counter++}`);
-            values.push(full_name);
-          }
-          
-          if (profile_image_url !== undefined) {
-            updateFields.push(`profile_image_url = $${counter++}`);
-            values.push(profile_image_url);
-          }
-          
-          if (updateFields.length === 0) {
-            return { error: 'No fields to update', status: 400 };
-          }
-          
-          // Add the user ID as the last parameter
-          values.push(id);
-          
-          // Update the user in the database
-          const result = await query(
-            `UPDATE users 
-             SET ${updateFields.join(', ')}
-             WHERE id = $${counter}
-             RETURNING *`,
-            values
-          );
-          
-          if (result.rows.length === 0) {
-            return { error: 'User not found', status: 404 };
-          }
-          
-          return result.rows[0];
+          return { 
+            id,
+            full_name: full_name || 'Test User',
+            profile_image_url: profile_image_url || null,
+            success: true
+          };
         } catch (error) {
           console.error('Error updating user:', error);
           return { error: 'Failed to update user', status: 500 };

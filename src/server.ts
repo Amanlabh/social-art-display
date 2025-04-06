@@ -10,6 +10,15 @@ export function makeServer({ environment = "development" } = {}) {
     routes() {
       this.namespace = "api";
 
+      // Handle Cloudflare analytics and other external service requests
+      this.passthrough('/cdn-cgi/**');
+      this.passthrough('https://clerk.clerk.accounts.dev/**');
+      this.passthrough('https://**/*.clerk.accounts.dev/**');
+      this.passthrough('https://*.cloudflareinsights.com/**');
+      
+      // Return to our namespace after defining passthrough routes
+      this.namespace = "api";
+
       this.post("/update-profile-picture", async (schema, request) => {
         try {
           const { userId, profileImageUrl } = JSON.parse(request.requestBody);

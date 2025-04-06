@@ -1,6 +1,4 @@
 
-import { query } from "@/integrations/db/client";
-
 // This is a mock API endpoint that would be implemented by a real backend
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {

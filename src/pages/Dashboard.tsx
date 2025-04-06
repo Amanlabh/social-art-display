@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { UserButton, useUser } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
@@ -34,7 +33,6 @@ import {
   Image,
   UserProfile
 } from "@/services/portfolioService";
-import { supabase } from "@/integrations/supabase/client";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface Track {
@@ -201,15 +199,30 @@ const Dashboard = () => {
     // Also update user profile in database if user exists
     if (user) {
       try {
-        const { error } = await supabase
-          .from('users')
-          .update({ profile_image_url: url })
-          .eq('id', user.id);
-        
-        if (error) throw error;
+        // Use our direct query function instead of Supabase
+        await updateUserProfilePicture(user.id, url);
       } catch (error) {
         console.error("Failed to update profile picture in database:", error);
       }
+    }
+  };
+
+  // Helper function to update user profile picture
+  const updateUserProfilePicture = async (userId: string, imageUrl: string) => {
+    try {
+      await fetch('/api/update-profile-picture', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId,
+          profileImageUrl: imageUrl
+        })
+      });
+    } catch (error) {
+      console.error("API error updating profile picture:", error);
+      throw error;
     }
   };
 
@@ -226,16 +239,21 @@ const Dashboard = () => {
       localStorage.setItem("userProfile", JSON.stringify(profile));
       
       // Update user profile in database
-      const { error: userError } = await supabase
-        .from('users')
-        .update({
+      const updatedProfile = await fetch('/api/update-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: user.id,
           full_name: profile.name,
-          profile_image_url: profile.profilePicture,
-          // email and username are managed by auth
+          profile_image_url: profile.profilePicture
         })
-        .eq('id', user.id);
+      }).then(res => res.json());
       
-      if (userError) throw userError;
+      if (!updatedProfile) {
+        throw new Error("Failed to update user profile");
+      }
       
       // Check if portfolio exists
       if (portfolio) {

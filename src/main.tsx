@@ -1,24 +1,17 @@
 
-import { createRoot } from 'react-dom/client';
-import { ClerkProvider } from "@clerk/clerk-react";
-import App from './App.tsx';
-import './index.css';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.tsx";
+import "./index.css";
+import { makeServer } from "./server";
 
-const PUBLISHABLE_KEY = "pk_test_dW5pZmllZC1qYWd1YXItNzguY2xlcmsuYWNjb3VudHMuZGV2JA";
-
-if (!PUBLISHABLE_KEY) {
-  throw new Error("Missing Clerk Publishable Key");
+// Start the mock API server in development
+if (process.env.NODE_ENV === "development") {
+  makeServer();
 }
 
-createRoot(document.getElementById("root")!).render(
-  <ClerkProvider
-    publishableKey={PUBLISHABLE_KEY}
-    clerkJSVersion="5.56.0-snapshot.v20250312225817"
-    signInUrl="/sign-in"
-    signUpUrl="/sign-up"
-    signInFallbackRedirectUrl="/dashboard"
-    signUpFallbackRedirectUrl="/dashboard"
-    afterSignOutUrl="/">
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
     <App />
-  </ClerkProvider>
+  </React.StrictMode>
 );

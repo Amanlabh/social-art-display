@@ -13,6 +13,7 @@ import {
   getPortfolioBySlug, 
   getImagesForPortfolio, 
   getImagesForUser,
+  getUserPortfolio,
   UserProfile,
   Portfolio as PortfolioType,
   Image

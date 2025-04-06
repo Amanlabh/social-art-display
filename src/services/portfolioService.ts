@@ -174,8 +174,13 @@ export async function getImagesForPortfolio(portfolioId: string): Promise<Image[
       .select('*')
       .eq('portfolio_id', portfolioId);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching portfolio images:', error);
+      throw error;
+    }
+    
     console.log('Found images:', data?.length || 0);
+    console.log('Image data:', data);
     return data || [];
   } catch (error: any) {
     console.error('Error fetching portfolio images:', error.message);
@@ -191,8 +196,13 @@ export async function getImagesForUser(userId: string): Promise<Image[]> {
       .select('*')
       .eq('user_id', userId);
 
-    if (error) throw error;
-    console.log('Images fetched for user:', data);
+    if (error) {
+      console.error('Error fetching user images:', error);
+      throw error;
+    }
+    
+    console.log('Images fetched for user:', data?.length || 0);
+    console.log('Image data:', data);
     return data || [];
   } catch (error: any) {
     console.error('Error fetching user images:', error.message);
@@ -213,13 +223,21 @@ export async function saveImage(imageData: {
       throw new Error("Image URL is required");
     }
     
+    // Get current user if userId is not provided
+    let userId = imageData.user_id;
+    if (!userId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      userId = user?.id;
+      console.log("Using current user ID for image:", userId);
+    }
+    
     // Insert the image into the database
     const { data, error } = await supabase
       .from('images')
       .insert({
         image_url: imageData.image_url,
         portfolio_id: imageData.portfolio_id || null,
-        user_id: imageData.user_id || null
+        user_id: userId || null
       })
       .select()
       .single();

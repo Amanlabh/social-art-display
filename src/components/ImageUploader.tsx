@@ -51,6 +51,14 @@ export default function ImageUploader({ onImagesUploaded, portfolioId, userId }:
       console.log("Starting upload with files:", files.length);
       console.log("Portfolio ID:", portfolioId);
       console.log("User ID:", userId);
+
+      // Get current user if userId is not provided
+      let currentUserId = userId;
+      if (!currentUserId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        currentUserId = user?.id;
+        console.log("Fetched current user ID:", currentUserId);
+      }
       
       // Upload files using Supabase storage
       const uploadedFiles = await startUpload(files);
@@ -70,7 +78,7 @@ export default function ImageUploader({ onImagesUploaded, portfolioId, userId }:
             const image = await saveImage({
               image_url: url,
               portfolio_id: portfolioId || null,
-              user_id: userId || null
+              user_id: currentUserId || null
             });
             console.log("Saved image:", image);
             return image;

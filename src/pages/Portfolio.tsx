@@ -98,15 +98,29 @@ const Portfolio = () => {
           const { data: { user } } = await supabase.auth.getUser();
           
           if (user) {
+            console.log("Current user ID for 'my-portfolio':", user.id);
             const userProfile = await getUserProfile(user.id);
             if (userProfile) {
               console.log("Current user profile:", userProfile);
               setProfile(userProfile);
             }
             
-            const userImages = await getImagesForUser(user.id);
-            console.log("User images:", userImages);
-            setImages(userImages);
+            const userPortfolio = await getUserPortfolio(user.id);
+            if (userPortfolio) {
+              console.log("Found user portfolio:", userPortfolio);
+              setPortfolioData(userPortfolio);
+              
+              const portfolioImages = await getImagesForPortfolio(userPortfolio.id);
+              console.log("Portfolio images:", portfolioImages);
+              setImages(portfolioImages);
+            } else {
+              const userImages = await getImagesForUser(user.id);
+              console.log("User images (no portfolio):", userImages);
+              setImages(userImages);
+            }
+          } else {
+            console.log("No authenticated user for 'my-portfolio'");
+            toast.error("You must be logged in to view your portfolio");
           }
         } else {
           console.error("Portfolio not found for ID:", id);

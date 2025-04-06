@@ -14,11 +14,11 @@ import {
   getImagesForPortfolio, 
   getImagesForUser,
   getUserPortfolio,
+  getCurrentUserId,
   UserProfile,
   Portfolio as PortfolioType,
   Image
 } from "@/services/portfolioService";
-import { supabase } from "@/integrations/supabase/client";
 
 interface Track {
   id: string;
@@ -96,17 +96,17 @@ const Portfolio = () => {
           console.log("Portfolio images:", portfolioImages);
           setImages(portfolioImages);
         } else if (id === "my-portfolio") {
-          const { data: { user } } = await supabase.auth.getUser();
+          const userId = await getCurrentUserId();
           
-          if (user) {
-            console.log("Current user ID for 'my-portfolio':", user.id);
-            const userProfile = await getUserProfile(user.id);
+          if (userId) {
+            console.log("Current user ID for 'my-portfolio':", userId);
+            const userProfile = await getUserProfile(userId);
             if (userProfile) {
               console.log("Current user profile:", userProfile);
               setProfile(userProfile);
             }
             
-            const userPortfolio = await getUserPortfolio(user.id);
+            const userPortfolio = await getUserPortfolio(userId);
             if (userPortfolio) {
               console.log("Found user portfolio:", userPortfolio);
               setPortfolioData(userPortfolio);
@@ -115,7 +115,7 @@ const Portfolio = () => {
               console.log("Portfolio images:", portfolioImages);
               setImages(portfolioImages);
             } else {
-              const userImages = await getImagesForUser(user.id);
+              const userImages = await getImagesForUser(userId);
               console.log("User images (no portfolio):", userImages);
               setImages(userImages);
             }
@@ -229,7 +229,12 @@ const Portfolio = () => {
         </Link>
         <Button 
           variant="outline" 
-          onClick={sharePortfolio}
+          onClick={() => {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url)
+              .then(() => toast.success("Portfolio link copied to clipboard!"))
+              .catch(() => toast.error("Couldn't copy link to clipboard."));
+          }}
           className="flex gap-2 items-center"
           size={isMobile ? "sm" : "default"}
         >

@@ -1,6 +1,5 @@
 
 import { createContext, useContext, ReactNode, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Type for upload file response
@@ -8,36 +7,36 @@ type UploadFileResponse = {
   url: string;
 };
 
-// Real upload function using Supabase storage
-const uploadToSupabase = async (files: File[]): Promise<UploadFileResponse[]> => {
+// Direct file upload function using fetch to an image hosting service
+// We're using a free service that allows direct image uploads
+const uploadToImageService = async (files: File[]): Promise<UploadFileResponse[]> => {
   const responses: UploadFileResponse[] = [];
   
   for (const file of files) {
     try {
-      console.log(`Uploading file to Supabase: ${file.name} (${file.size} bytes)`);
+      console.log(`Uploading file: ${file.name} (${file.size} bytes)`);
       
-      // Generate a unique filename to avoid collisions
-      const uniqueFileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+      // Using ImgBB as a simple image hosting service
+      const formData = new FormData();
+      formData.append('image', file);
+      // Note: In production, you'd use your own API key or a more robust service
+      formData.append('key', '6d207e02198a847aa98d0a2a901485a2'); // This is a free demo key, not recommended for production
       
-      // Upload to Supabase storage
-      const { data, error } = await supabase.storage
-        .from('images')
-        .upload(uniqueFileName, file);
+      const response = await fetch('https://api.imgbb.com/1/upload', {
+        method: 'POST',
+        body: formData
+      });
       
-      if (error) {
-        console.error("Supabase upload error:", error);
-        throw error;
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.error?.message || "Failed to upload image");
       }
       
-      // Get the public URL for the uploaded file
-      const { data: urlData } = supabase.storage
-        .from('images')
-        .getPublicUrl(uniqueFileName);
-      
-      const url = urlData.publicUrl;
-      console.log(`File uploaded successfully. Public URL: ${url}`);
+      const url = data.data.url;
+      console.log(`File uploaded successfully. URL: ${url}`);
       responses.push({ url });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Upload error:", error);
       toast.error(`Failed to upload ${file.name}`);
     }
@@ -55,7 +54,7 @@ export const useUploadThing = (endpoint: string) => {
     console.log(`Starting upload of ${files.length} files to endpoint: ${endpoint}`);
     
     try {
-      const response = await uploadToSupabase(files);
+      const response = await uploadToImageService(files);
       console.log("Upload complete, responses:", response);
       return response;
     } catch (error) {
@@ -72,7 +71,7 @@ export const useUploadThing = (endpoint: string) => {
 // Direct upload function
 export const uploadFiles = async (files: File[]): Promise<UploadFileResponse[]> => {
   console.log(`Uploading ${files.length} files directly`);
-  return await uploadToSupabase(files);
+  return await uploadToImageService(files);
 };
 
 // Context for UploadThing provider

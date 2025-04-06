@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, X, Loader2 } from "lucide-react";
 import { useUploadThing } from "@/lib/uploadthing";
 import { toast } from "sonner";
-import { saveImage } from "@/services/portfolioService";
-import { supabase } from "@/integrations/supabase/client";
+import { saveImage, getCurrentUserId } from "@/services/portfolioService";
 
 interface ImageUploaderProps {
   onImagesUploaded: (urls: string[]) => void;
@@ -55,12 +54,11 @@ export default function ImageUploader({ onImagesUploaded, portfolioId, userId }:
       // Get current user if userId is not provided
       let currentUserId = userId;
       if (!currentUserId) {
-        const { data: { user } } = await supabase.auth.getUser();
-        currentUserId = user?.id;
+        currentUserId = await getCurrentUserId();
         console.log("Fetched current user ID:", currentUserId);
       }
       
-      // Upload files using Supabase storage
+      // Upload files to our image hosting service
       const uploadedFiles = await startUpload(files);
       
       if (!uploadedFiles || uploadedFiles.length === 0) {

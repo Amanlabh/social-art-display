@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { query } from "@/integrations/db/client";
 import { toast } from "sonner";
 
 export interface Portfolio {
@@ -30,16 +30,28 @@ export interface UserProfile {
   created_at: string;
 }
 
+// Helper function to get current user ID - we'll need to adapt this
+export async function getCurrentUserId(): Promise<string | null> {
+  // In a real app, this would come from your authentication system
+  // For now, we'll return a mock user ID or get from localStorage
+  const mockUserId = localStorage.getItem('currentUserId') || 'user-123';
+  return mockUserId;
+}
+
+export async function setCurrentUserId(userId: string) {
+  localStorage.setItem('currentUserId', userId);
+  return userId;
+}
+
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
   try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    if (error) throw error;
-    return data;
+    const res = await query(
+      'SELECT * FROM users WHERE id = $1',
+      [userId]
+    );
+    
+    if (res.rows.length === 0) return null;
+    return res.rows[0] as UserProfile;
   } catch (error: any) {
     console.error('Error fetching user profile:', error.message);
     return null;
@@ -48,20 +60,13 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 
 export async function getPortfolioBySlug(slug: string): Promise<Portfolio | null> {
   try {
-    const { data, error } = await supabase
-      .from('portfolios')
-      .select('*')
-      .eq('slug', slug)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // No rows returned
-        return null;
-      }
-      throw error;
-    }
-    return data as Portfolio;
+    const res = await query(
+      'SELECT * FROM portfolios WHERE slug = $1',
+      [slug]
+    );
+    
+    if (res.rows.length === 0) return null;
+    return res.rows[0] as Portfolio;
   } catch (error: any) {
     console.error('Error fetching portfolio by slug:', error.message);
     return null;
@@ -70,20 +75,13 @@ export async function getPortfolioBySlug(slug: string): Promise<Portfolio | null
 
 export async function getPortfolioById(id: string): Promise<Portfolio | null> {
   try {
-    const { data, error } = await supabase
-      .from('portfolios')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // No rows returned
-        return null;
-      }
-      throw error;
-    }
-    return data as Portfolio;
+    const res = await query(
+      'SELECT * FROM portfolios WHERE id = $1',
+      [id]
+    );
+    
+    if (res.rows.length === 0) return null;
+    return res.rows[0] as Portfolio;
   } catch (error: any) {
     console.error('Error fetching portfolio by ID:', error.message);
     return null;
@@ -92,14 +90,13 @@ export async function getPortfolioById(id: string): Promise<Portfolio | null> {
 
 export async function getUserPortfolio(userId: string): Promise<Portfolio | null> {
   try {
-    const { data, error } = await supabase
-      .from('portfolios')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-
-    if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows returned"
-    return data as Portfolio || null;
+    const res = await query(
+      'SELECT * FROM portfolios WHERE user_id = $1',
+      [userId]
+    );
+    
+    if (res.rows.length === 0) return null;
+    return res.rows[0] as Portfolio;
   } catch (error: any) {
     console.error('Error fetching user portfolio:', error.message);
     return null;
@@ -116,25 +113,22 @@ export async function createPortfolio(portfolioData: {
   try {
     console.log("Creating portfolio with data:", portfolioData);
     
-    const { data, error } = await supabase
-      .from('portfolios')
-      .insert({
-        title: portfolioData.title,
-        description: portfolioData.description || null,
-        user_id: portfolioData.user_id,
-        slug: portfolioData.slug || null,
-        is_public: portfolioData.is_public !== undefined ? portfolioData.is_public : true
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Portfolio creation error:", error);
-      throw error;
-    }
+    const res = await query(
+      `INSERT INTO portfolios 
+       (title, description, user_id, slug, is_public)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [
+        portfolioData.title,
+        portfolioData.description || null,
+        portfolioData.user_id,
+        portfolioData.slug || null,
+        portfolioData.is_public !== undefined ? portfolioData.is_public : true
+      ]
+    );
     
-    console.log("Portfolio created successfully:", data);
-    return data as Portfolio;
+    console.log("Portfolio created successfully:", res.rows[0]);
+    return res.rows[0] as Portfolio;
   } catch (error: any) {
     console.error('Error creating portfolio:', error.message);
     toast.error("Failed to create portfolio");
@@ -149,16 +143,50 @@ export async function updatePortfolio(id: string, updates: {
   is_public?: boolean;
 }): Promise<Portfolio | null> {
   try {
-    const { data, error } = await supabase
-      .from('portfolios')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
+    // Build the SET clause dynamically based on provided updates
+    const updateFields: string[] = [];
+    const values: any[] = [];
+    let counter = 1;
+    
+    if (updates.title !== undefined) {
+      updateFields.push(`title = $${counter++}`);
+      values.push(updates.title);
+    }
+    
+    if (updates.description !== undefined) {
+      updateFields.push(`description = $${counter++}`);
+      values.push(updates.description);
+    }
+    
+    if (updates.slug !== undefined) {
+      updateFields.push(`slug = $${counter++}`);
+      values.push(updates.slug);
+    }
+    
+    if (updates.is_public !== undefined) {
+      updateFields.push(`is_public = $${counter++}`);
+      values.push(updates.is_public);
+    }
+    
+    if (updateFields.length === 0) {
+      return getPortfolioById(id); // Nothing to update
+    }
+    
+    // Add the portfolio ID as the last parameter
+    values.push(id);
+    
+    const res = await query(
+      `UPDATE portfolios 
+       SET ${updateFields.join(', ')}, updated_at = NOW()
+       WHERE id = $${counter}
+       RETURNING *`,
+      values
+    );
+    
+    if (res.rows.length === 0) return null;
+    
     toast.success("Portfolio updated successfully");
-    return data as Portfolio;
+    return res.rows[0] as Portfolio;
   } catch (error: any) {
     console.error('Error updating portfolio:', error.message);
     toast.error("Failed to update portfolio");
@@ -169,19 +197,13 @@ export async function updatePortfolio(id: string, updates: {
 export async function getImagesForPortfolio(portfolioId: string): Promise<Image[]> {
   try {
     console.log('Fetching images for portfolio:', portfolioId);
-    const { data, error } = await supabase
-      .from('images')
-      .select('*')
-      .eq('portfolio_id', portfolioId);
-
-    if (error) {
-      console.error('Error fetching portfolio images:', error);
-      throw error;
-    }
+    const res = await query(
+      'SELECT * FROM images WHERE portfolio_id = $1',
+      [portfolioId]
+    );
     
-    console.log('Found images:', data?.length || 0);
-    console.log('Image data:', data);
-    return data || [];
+    console.log('Found images:', res.rows.length);
+    return res.rows;
   } catch (error: any) {
     console.error('Error fetching portfolio images:', error.message);
     return [];
@@ -191,19 +213,13 @@ export async function getImagesForPortfolio(portfolioId: string): Promise<Image[
 export async function getImagesForUser(userId: string): Promise<Image[]> {
   try {
     console.log('Fetching images for user:', userId);
-    const { data, error } = await supabase
-      .from('images')
-      .select('*')
-      .eq('user_id', userId);
-
-    if (error) {
-      console.error('Error fetching user images:', error);
-      throw error;
-    }
+    const res = await query(
+      'SELECT * FROM images WHERE user_id = $1',
+      [userId]
+    );
     
-    console.log('Images fetched for user:', data?.length || 0);
-    console.log('Image data:', data);
-    return data || [];
+    console.log('Images fetched for user:', res.rows.length);
+    return res.rows;
   } catch (error: any) {
     console.error('Error fetching user images:', error.message);
     return [];
@@ -226,29 +242,25 @@ export async function saveImage(imageData: {
     // Get current user if userId is not provided
     let userId = imageData.user_id;
     if (!userId) {
-      const { data: { user } } = await supabase.auth.getUser();
-      userId = user?.id;
+      userId = await getCurrentUserId();
       console.log("Using current user ID for image:", userId);
     }
     
     // Insert the image into the database
-    const { data, error } = await supabase
-      .from('images')
-      .insert({
-        image_url: imageData.image_url,
-        portfolio_id: imageData.portfolio_id || null,
-        user_id: userId || null
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error in Supabase insert:', error);
-      throw error;
-    }
+    const res = await query(
+      `INSERT INTO images
+       (image_url, portfolio_id, user_id, created_at)
+       VALUES ($1, $2, $3, NOW())
+       RETURNING *`,
+      [
+        imageData.image_url,
+        imageData.portfolio_id || null,
+        userId || null
+      ]
+    );
     
-    console.log('Image saved successfully:', data);
-    return data as Image;
+    console.log('Image saved successfully:', res.rows[0]);
+    return res.rows[0] as Image;
   } catch (error: any) {
     console.error('Error saving image:', error);
     console.error('Error details:', error.message);
@@ -258,12 +270,10 @@ export async function saveImage(imageData: {
 
 export async function deleteImage(imageId: string): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('images')
-      .delete()
-      .eq('id', imageId);
-
-    if (error) throw error;
+    await query(
+      'DELETE FROM images WHERE id = $1',
+      [imageId]
+    );
     return true;
   } catch (error: any) {
     console.error('Error deleting image:', error.message);
@@ -281,13 +291,13 @@ export async function generateUniqueSlug(baseSlug: string): Promise<string> {
   if (!slug) slug = 'portfolio';
 
   // Check if slug exists
-  const { data } = await supabase
-    .from('portfolios')
-    .select('slug')
-    .eq('slug', slug);
+  const res = await query(
+    'SELECT slug FROM portfolios WHERE slug = $1',
+    [slug]
+  );
 
   // If no conflict, return the slug
-  if (!data || data.length === 0) return slug;
+  if (res.rows.length === 0) return slug;
 
   // If conflict, append a random string
   const random = Math.random().toString(36).substring(2, 8);

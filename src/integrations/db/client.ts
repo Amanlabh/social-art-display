@@ -2,10 +2,9 @@
 import { Pool, PoolClient } from 'pg';
 import { MockQueryResult } from './types';
 
-// Create a PostgreSQL connection pool
+// Create a PostgreSQL connection pool with the provided connection string
 const pool = new Pool({
-  connectionString: import.meta.env.VITE_DATABASE_URL || 
-    'postgresql://postgres:postgres@db.example.com:5432/portfolio',
+  connectionString: 'postgresql://neondb_owner:npg_1C4YNXgxeZln@ep-dry-cake-a4zbjonp-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require',
   ssl: {
     rejectUnauthorized: false // Required for Neon's SSL
   }

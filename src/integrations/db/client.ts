@@ -1,83 +1,63 @@
 
+import { Pool, PoolClient } from 'pg';
 import { MockQueryResult } from './types';
 
-// Mock implementation of the PostgreSQL client for browser environments
-const mockDatabase = {
-  users: [
-    {
-      id: 'user-123',
-      full_name: 'Test User',
-      username: 'testuser',
-      email: 'test@example.com',
-      profile_image_url: null,
-      created_at: new Date().toISOString()
-    }
-  ],
-  portfolios: [],
-  images: []
-};
+// Create a PostgreSQL connection pool
+const pool = new Pool({
+  connectionString: import.meta.env.VITE_DATABASE_URL || 
+    'postgresql://postgres:postgres@db.example.com:5432/portfolio',
+  ssl: {
+    rejectUnauthorized: false // Required for Neon's SSL
+  }
+});
 
-// Helper function for running SQL queries (mock implementation)
+// Log successful connection
+pool.on('connect', client => {
+  console.log('Connected to PostgreSQL database');
+});
+
+// Log errors
+pool.on('error', (err) => {
+  console.error('PostgreSQL pool error:', err);
+});
+
+// Helper function for running SQL queries
 export async function query(text: string, params: any[] = []): Promise<MockQueryResult> {
-  console.log('Mock query executed:', { text, params });
+  console.log('Executing query:', { text, params });
   
-  // Simulate delay to mimic network request
-  await new Promise(resolve => setTimeout(resolve, 100));
-  
-  // Very simple mock implementation based on the query text
-  if (text.toLowerCase().includes('select * from users where id =')) {
-    const userId = params[0];
-    const user = mockDatabase.users.find(u => u.id === userId);
+  try {
+    const result = await pool.query(text, params);
     return {
-      rows: user ? [user] : [],
-      rowCount: user ? 1 : 0
+      rows: result.rows,
+      rowCount: result.rowCount
     };
+  } catch (error: any) {
+    console.error('Database query error:', error.message);
+    throw error;
   }
-  
-  if (text.toLowerCase().includes('select * from portfolios where user_id =')) {
-    const userId = params[0];
-    const portfolios = mockDatabase.portfolios.filter(p => p.user_id === userId);
-    return {
-      rows: portfolios,
-      rowCount: portfolios.length
-    };
-  }
-  
-  if (text.toLowerCase().includes('select * from images where portfolio_id =')) {
-    const portfolioId = params[0];
-    const images = mockDatabase.images.filter(img => img.portfolio_id === portfolioId);
-    return {
-      rows: images,
-      rowCount: images.length
-    };
-  }
-  
-  if (text.toLowerCase().includes('select * from images where user_id =')) {
-    const userId = params[0];
-    const images = mockDatabase.images.filter(img => img.user_id === userId);
-    return {
-      rows: images,
-      rowCount: images.length
-    };
-  }
-  
-  // For update/insert operations, just return success
-  if (text.toLowerCase().includes('update ') || text.toLowerCase().includes('insert ')) {
-    return {
-      rows: [],
-      rowCount: 1
-    };
-  }
-  
-  // Default fallback
-  return {
-    rows: [],
-    rowCount: 0
-  };
 }
 
-// Helper function to add mock data - only for development
+// Get a client from the pool for transactions
+export async function getClient(): Promise<PoolClient> {
+  return await pool.connect();
+}
+
+// Mock function to maintain compatibility with the old mock implementation
 export function addMockData(table: 'users' | 'portfolios' | 'images', data: any) {
-  mockDatabase[table].push(data);
-  console.log(`Added mock data to ${table}:`, data);
+  console.warn('addMockData is deprecated, please insert data using real queries');
+  
+  // Convert mock data to proper INSERT query
+  const columns = Object.keys(data);
+  const values = Object.values(data);
+  const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
+  
+  const sql = `
+    INSERT INTO ${table} (${columns.join(', ')})
+    VALUES (${placeholders})
+    ON CONFLICT (id) DO UPDATE
+    SET ${columns.map((col, i) => `${col} = $${i + 1}`).join(', ')}
+    RETURNING *
+  `;
+  
+  return query(sql, values);
 }

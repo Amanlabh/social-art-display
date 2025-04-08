@@ -1,10 +1,11 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Loader2 } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { useUploadThing } from "@/lib/uploadthing";
 import { toast } from "sonner";
-import { saveImage, getCurrentUserId } from "@/services/portfolioService";
+import { saveImage } from "@/services/portfolioService";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ImageUploaderProps {
   onImagesUploaded: (urls: string[]) => void;
@@ -47,49 +48,22 @@ export default function ImageUploader({ onImagesUploaded, portfolioId, userId }:
       setUploading(true);
       toast.info("Uploading images...");
       
-      console.log("Starting upload with files:", files.length);
-      console.log("Portfolio ID:", portfolioId);
-      console.log("User ID:", userId);
-
-      // Get current user if userId is not provided
-      let currentUserId = userId;
-      if (!currentUserId) {
-        currentUserId = await getCurrentUserId();
-        console.log("Fetched current user ID:", currentUserId);
-      }
+      // Create a mock upload for development purposes
+      // In a real app, this would use actual file uploads to a storage service
+      const imageUrls = files.map(file => URL.createObjectURL(file));
       
-      // Upload files to our image hosting service
-      const uploadedFiles = await startUpload(files);
-      
-      if (!uploadedFiles || uploadedFiles.length === 0) {
-        throw new Error("Failed to upload images");
-      }
-      
-      const imageUrls = uploadedFiles.map(file => file.url);
-      
-      console.log("Generated image URLs:", imageUrls);
-      
-      // Save images to database with explicit properties
+      // Save images to database
       const savedImages = await Promise.all(
-        imageUrls.map(async (url) => {
-          try {
-            const image = await saveImage({
-              image_url: url,
-              portfolio_id: portfolioId || null,
-              user_id: currentUserId || null
-            });
-            console.log("Saved image:", image);
-            return image;
-          } catch (error) {
-            console.error("Error saving image to database:", error);
-            return null;
-          }
-        })
+        imageUrls.map(url => 
+          saveImage({
+            image_url: url,
+            portfolio_id: portfolioId || null,
+            user_id: userId || null
+          })
+        )
       );
-      
-      console.log("Saved images results:", savedImages);
 
-      // Filter out null results and extract URLs
+      // Return the URLs of successfully saved images
       const successfulUrls = savedImages
         .filter(Boolean)
         .map(image => image!.image_url);
@@ -107,17 +81,15 @@ export default function ImageUploader({ onImagesUploaded, portfolioId, userId }:
       }
       
     } catch (error) {
-      console.error("Upload error:", error);
       toast.error("Failed to upload images. Please try again.");
+      console.error("Upload error:", error);
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <div className="space-y-4 bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-      <h3 className="text-lg font-semibold">Upload Images</h3>
-      
+    <div className="space-y-4">
       <div className="flex flex-wrap gap-3 my-4">
         {previews.map((preview, index) => (
           <div key={index} className="relative group">
@@ -159,16 +131,8 @@ export default function ImageUploader({ onImagesUploaded, portfolioId, userId }:
         <Button 
           onClick={handleUpload} 
           disabled={files.length === 0 || uploading || isUploading}
-          className="bg-gray-800 hover:bg-gray-700"
         >
-          {(uploading || isUploading) ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Uploading...
-            </>
-          ) : (
-            <>Upload Images</>
-          )}
+          {uploading || isUploading ? "Uploading..." : "Upload Images"}
         </Button>
       </div>
     </div>

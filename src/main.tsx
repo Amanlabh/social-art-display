@@ -1,20 +1,24 @@
 
-import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App.tsx";
-import "./index.css";
+import { createRoot } from 'react-dom/client';
 import { ClerkProvider } from "@clerk/clerk-react";
+import App from './App.tsx';
+import './index.css';
 
-// Get Clerk publishable key - using a fallback for development
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "pk_test_YWJzb2x1dGUtY2hpY2tlbi01OS5jbGVyay5hY2NvdW50cy5kZXYk";
+const PUBLISHABLE_KEY = "pk_test_dW5pZmllZC1qYWd1YXItNzguY2xlcmsuYWNjb3VudHMuZGV2JA";
 
-// Note: We're no longer starting the mock server
-// Now we'll use direct DB connection to Neon
+if (!PUBLISHABLE_KEY) {
+  throw new Error("Missing Clerk Publishable Key");
+}
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-      <App />
-    </ClerkProvider>
-  </React.StrictMode>
+createRoot(document.getElementById("root")!).render(
+  <ClerkProvider
+    publishableKey={PUBLISHABLE_KEY}
+    clerkJSVersion="5.56.0-snapshot.v20250312225817"
+    signInUrl="/sign-in"
+    signUpUrl="/sign-up"
+    signInFallbackRedirectUrl="/dashboard"
+    signUpFallbackRedirectUrl="/dashboard"
+    afterSignOutUrl="/">
+    <App />
+  </ClerkProvider>
 );
